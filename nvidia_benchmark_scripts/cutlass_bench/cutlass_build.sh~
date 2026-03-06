@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#Edit for blackwell
+ARCH="90a"
+
+rm -rf cutlass
+
+git clone https://github.com/NVIDIA/cutlass.git
+
+(cd cutlass; mkdir build; cd build; cmake -DCUTLASS_NVCC_ARCHS_ENABLED=${ARCH} -DCUTLASS_NVCC_ARCHS=${ARCH} -DCUTLASS_LIBRARY_OPERATIONS='gemm' -DCUTLASS_LIBRARY_KERNELS='tensorop_gemm_grouped_e5m2_e5m2_f32_f16_f16' -DCUTLASS_UNITY_BUILD_ENABLED=ON -DCUTLASS_LIBRARY_INSTANTIATION_LEVEL='max' -DCUTLASS_LIBRARY_OPERATIONS='all' -DCUTLASS_ENABLE_SM90_EXTENDED_MMA_SHAPES=ON -DCUTLASS_ENABLE_GDC_FOR_SM100=ON ../; make -j 32)
+ 

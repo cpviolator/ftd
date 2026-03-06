@@ -1,0 +1,60 @@
+# CUTLASS Kernel Tune Cache
+# GPU: NVIDIA GB10
+# Build: sm120_allcfg_fp6k128_fp4k256_bs128x128_stg3_vec
+# Architecture: SM120
+# FP8 configs: all tile/stage combos compiled (runtime-selectable)
+# FP6: enabled (MMA_K=128)
+# FP4: enabled (MMA_K=256)
+# Block-scaled tile: 128x128
+# Pipeline stages: 3
+# Extra vectorization: ON
+# Device LTO: OFF
+# Max registers: default
+#
+# key  block_x block_y block_z  grid_x grid_y grid_z  bandwidth_GBps time_us
+cast_fp16_to_fp8_paired:105062400                            1024    1    1  12825      1      1    241.1  2614.49
+cast_fp16_to_fp8_paired:106496000                            1024    1    1  13000      1      1    243.2  2627.53
+cast_fp16_to_fp8_paired:109051904                            1024    1    1  13312      1      1    244.2  2678.95
+cast_fp16_to_fp8_paired:13132800                               32    1    1  51300      1      1    233.1   338.07
+cast_fp16_to_fp8_paired:1363148800                           1024    1    1  65535      1      1    234.6 34869.37
+cast_fp16_to_fp8_paired:1641600000                            256    1    1     48      1      1    238.2 41353.81
+cast_fp16_to_fp8_paired:170393600                            1024    1    1  20800      1      1    247.5  4131.35
+cast_fp16_to_fp8_paired:210124800                            1024    1    1  25650      1      1    243.0  5189.26
+cast_fp16_to_fp8_paired:21299200                             1024    1    1   2600      1      1    250.4   510.27
+cast_fp16_to_fp8_paired:212992000                            1024    1    1  26000      1      1    244.9  5219.07
+cast_fp16_to_fp8_paired:218103808                            1024    1    1  26624      1      1    244.5  5351.27
+cast_fp16_to_fp8_paired:26265600                             1024    1    1   3207      1      1    234.5   672.05
+cast_fp16_to_fp8_paired:2662400                                64    1    1   5200      1      1   1594.4    10.02
+cast_fp16_to_fp8_paired:26624000                             1024    1    1   3250      1      1    232.6   686.88
+cast_fp16_to_fp8_paired:27262976                             1024    1    1   3328      1      1    231.4   706.85
+cast_fp16_to_fp8_paired:2726297600                             32    1    1    384      1      1    240.1 68116.52
+cast_fp16_to_fp8_paired:340787200                            1024    1    1  41600      1      1    246.4  8299.69
+cast_fp16_to_fp8_paired:420249600                            1024    1    1  51300      1      1    236.1 10680.49
+cast_fp16_to_fp8_paired:42598400                             1024    1    1   5200      1      1    247.7  1031.97
+cast_fp16_to_fp8_paired:52531200                             1024    1    1   6413      1      1    236.3  1333.65
+cast_fp16_to_fp8_paired:53248000                             1024    1    1   6500      1      1    237.5  1344.97
+cast_fp16_to_fp8_paired:54525952                             1024    1    1   6656      1      1    238.0  1374.88
+cast_fp16_to_fp8_paired:5452595200                            128    1    1     96      1      1    236.2 138489.72
+cast_fp16_to_fp8_paired:820800000                            1024    1    1  65535      1      1    235.9 20873.49
+cast_fp16_to_fp8_paired:85196800                             1024    1    1  10400      1      1    245.6  2081.58
+cast_fp16_to_fp8_stacked:13631488                              32    1    1  53248      1      1    231.1   471.97
+cast_fp16_to_fp8_stacked:1703936                              256    1    1    384      1      1   1247.0    10.93
+cast_fp16_to_fp8_stacked:27262976                            1024    1    1   3328      1      1    235.0   928.14
+cast_fp16_to_fp8_stacked:3407872                               32    1    1  13312      1      1    290.5    93.86
+cast_fp16_to_fp8_stacked:425984                               256    1    1    192      1      1    812.3     4.20
+cast_fp16_to_fp8_stacked:6815744                               32    1    1  26624      1      1    225.7   241.64
+cast_fp16_to_fp8_stacked:851968                               512    1    1    208      1      1   1092.8     6.24
+negate_and_stack_fp8:106496000                                512    1    1  13000      1      1    241.9  1760.73
+negate_and_stack_fp8:212992000                               1024    1    1  13000      1      1    243.7  3496.63
+negate_and_stack_fp8:26624000                                1024    1    1   1625      1      1    226.7   469.71
+negate_and_stack_fp8:53248000                                1024    1    1   3250      1      1    231.2   921.12
+pack_antisymmetrize_triangle:1664x128x0                       512    1    1   1664    128      1    317.9  8922.76
+pack_antisymmetrize_triangle:1664x16x0                        512    1    1   1664     16      1    318.1  1114.58
+pack_antisymmetrize_triangle:1664x32x0                        256    1    1   1664     32      1    307.9  2303.09
+pack_antisymmetrize_triangle:1664x4x0                         256    1    1   1664      4      1    309.6   286.23
+pack_antisymmetrize_triangle:1664x64x0                        512    1    1   1664     64      1    309.2  4586.63
+pack_antisymmetrize_triangle:1664x8x0                          64    1    1   1664      8      1    307.5   576.52
+stack_fp8:106496000                                          1024    1    1   6500      1      1    242.0  1760.58
+stack_fp8:212992000                                          1024    1    1  13000      1      1    246.2  3460.84
+stack_fp8:26624000                                             32    1    1  52000      1      1    227.4   468.41
+stack_fp8:53248000                                            512    1    1   6500      1      1    232.1   917.68

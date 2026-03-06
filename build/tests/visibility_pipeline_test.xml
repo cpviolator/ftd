@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="20" failures="0" disabled="0" errors="0" timestamp="2026-03-03T23:52:03" time="0.84" name="AllTests">
+  <testsuite name="VisibilityPipeline/CornerTurnGTest" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.001" classname="VisibilityPipeline/CornerTurnGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/XEngineIntGTest" tests="1" failures="0" disabled="0" errors="0" time="0.077">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.077" classname="VisibilityPipeline/XEngineIntGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/XEngineTCCGTest" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="verify/0" value_param="(4)" status="skipped" time="0" classname="VisibilityPipeline/XEngineTCCGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/XEngineTCCCorrectGTest" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="verify/0" value_param="(4)" status="skipped" time="0" classname="VisibilityPipeline/XEngineTCCCorrectGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/XEngineCrossGTest" tests="1" failures="0" disabled="0" errors="0" time="0.244">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.244" classname="VisibilityPipeline/XEngineCrossGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/PipelineCTGTest" tests="1" failures="0" disabled="0" errors="0" time="0.004">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.004" classname="VisibilityPipeline/PipelineCTGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/DedispIntGTest" tests="1" failures="0" disabled="0" errors="0" time="0.032">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.032" classname="VisibilityPipeline/DedispIntGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/DedispInjectGTest" tests="1" failures="0" disabled="0" errors="0" time="0.177">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.177" classname="VisibilityPipeline/DedispInjectGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/PromoteQcSmGTest" tests="1" failures="0" disabled="0" errors="0" time="0.013">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.013" classname="VisibilityPipeline/PromoteQcSmGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/ConvertQcSmGTest" tests="1" failures="0" disabled="0" errors="0" time="0.011">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.011" classname="VisibilityPipeline/ConvertQcSmGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/TriangulateGTest" tests="1" failures="0" disabled="0" errors="0" time="0.012">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.012" classname="VisibilityPipeline/TriangulateGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/CutlassHerkGTest" tests="1" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0" classname="VisibilityPipeline/CutlassHerkGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/CutlassPipeGTest" tests="1" failures="0" disabled="0" errors="0" time="0.005">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.005" classname="VisibilityPipeline/CutlassPipeGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/Dsa2kCutK16GTest" tests="1" failures="0" disabled="0" errors="0" time="0.017">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.017" classname="VisibilityPipeline/Dsa2kCutK16GTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/Dsa2kCutK32GTest" tests="1" failures="0" disabled="0" errors="0" time="0.027">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.027" classname="VisibilityPipeline/Dsa2kCutK32GTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/Dsa2kCubK16GTest" tests="1" failures="0" disabled="0" errors="0" time="0.118">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.118" classname="VisibilityPipeline/Dsa2kCubK16GTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/GriddingScatterGTest" tests="1" failures="0" disabled="0" errors="0" time="0.011">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.011" classname="VisibilityPipeline/GriddingScatterGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/FFTRoundtripGTest" tests="1" failures="0" disabled="0" errors="0" time="0.088">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.088" classname="VisibilityPipeline/FFTRoundtripGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/ImagingIntGTest" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.001" classname="VisibilityPipeline/ImagingIntGTest" />
+  </testsuite>
+  <testsuite name="VisibilityPipeline/HerkImagingGTest" tests="1" failures="0" disabled="0" errors="0" time="0.001">
+    <testcase name="verify/0" value_param="(4)" status="run" time="0.001" classname="VisibilityPipeline/HerkImagingGTest" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" timestamp="2026-03-03T23:51:36" time="20.42" name="AllTests">
+  <testsuite name="beamformer_test/Beamformer" tests="1" failures="0" disabled="0" errors="0" time="20.42">
+    <testcase name="verify/BeamformerTest_single" value_param="(4)" status="run" time="20.42" classname="beamformer_test/Beamformer" />
+  </testsuite>
+</testsuites>

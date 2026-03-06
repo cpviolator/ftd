@@ -1,0 +1,22 @@
+# CUTLASS HERK Strategy Tune Cache
+# GPU: NVIDIA GB10
+# Build: sm120_allcfg_fp6k128_fp4k256_bs128x128_stg3_vec
+# Architecture: SM120
+# FP8 configs: all tile/stage combos compiled (runtime-selectable)
+# FP6: enabled (MMA_K=128)
+# FP4: enabled (MMA_K=256)
+# Block-scaled tile: 128x128
+# Pipeline stages: 3
+# Extra vectorization: ON
+# Device LTO: OFF
+# Max registers: default
+#
+# N	K	batch	precision	mode	strategy	graph	persistent	herk_graph	tile	gemm_config	tile_name	time_ms	tflops	bandwidth_gbs	direct_config	direct_name
+1664	128	32	0	Direct	TriangleAware	1	1	0	1	0	FP8_T128x64_C1x1_S3	1.215	56.0	168.4	0	K32_B3
+1664	128	128	0	Direct	TriangleAware	0	1	0	1	0	FP8_T128x64_C1x1_S3	4.753	57.3	172.2	0	K32_B3
+1664	128	8	0	Direct	Baseline	0	1	0	1	0	FP8_T128x64_C1x1_S3	0.340	50.0	150.3	0	K32_B3
+1664	64	4	0	Direct	TriangleAware	0	0	0	1	0	FP8_T128x64_C1x1_S3	0.141	30.2	169.5	0	K32_B3
+1664	128	4	0	Direct	TriangleAware	1	1	0	1	0	FP8_T128x64_C1x1_S3	0.170	49.9	150.1	0	K32_B3
+1664	128	16	0	Direct	TriangleAware	1	1	0	1	0	FP8_T128x64_C1x1_S3	0.634	53.6	161.2	0	K32_B3
+1664	256	4	0	Direct	TriangleAware	0	0	0	1	0	FP8_T128x64_C1x1_S3	0.242	70.2	119.7	0	K32_B3
+1664	128	64	0	Direct	TriangleAware	0	1	0	1	0	FP8_T128x64_C1x1_S3	2.371	57.4	172.5	0	K32_B3

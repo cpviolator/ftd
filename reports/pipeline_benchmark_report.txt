@@ -1,0 +1,340 @@
+================================================================================
+  DSA-2000 FTD Pipeline Benchmark Report
+  GPU: NVIDIA GB10 Spark (SM 12.1, 48 SMs, 128 GB, 273 GB/s peak BW, ~209 TFLOPS FP8)
+  Date: 2026-03-03
+  Binary: bench_pipeline (lib/bench_pipeline.cu)
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+Three FTD pipeline stages benchmarked at DSA-2000 production parameters:
+  - VoltBF: 17.3 ms/payload (n_time=8), 21.3 ms (n_time=16) — GEMM-dominated
+  - VisBF:  640-1408 ms/payload — imaging-dominated (87-93%)
+  - Dedisp: 12.4 ms (CUTLASS FP8), 13.4 ms (cuBLAS FP32) — 1.08x speedup
+
+Multi-stream coordination adds ~2% overhead for single-payload processing.
+The dominant bottleneck varies by stage: GEMM for VoltBF, imaging (FFT) for
+VisBF, and transpose+FFT for Dedisp.
+
+
+================================================================================
+1. VOLTAGE BEAMFORMER (VoltBF)
+================================================================================
+
+Pipeline: QC INT4 → FP8 cast → GEMM×2 (pol0+pol1) → time_integrate → corner_turn
+Params:   n_ant=1664, n_beam=4096, n_ch=128, n_tps=1
+GEMM:     M=n_time, N=4096, K=1664, batch=128  (prepare/execute pattern)
+Memory:   ~10.5 GB
+
+1.1 Per-Stage Timing
+--------------------
+
+  n_time=8 (GEMM: 8×4096×1664×128)
+  ---------------------------------------------------------------
+  Stage              Mean (ms)   % Total    Bandwidth / TFLOPS
+  ---------------------------------------------------------------
+  qc_cast                 0.12     0.7%     14.2 GB/s  (5% peak)
+  gemm_pol0               7.88    45.7%     }
+  gemm_pol1               7.92    45.9%     } 7.1 TFLOPS combined (3.4% FP8 peak)
+  time_integrate          0.15     0.9%     28.0 GB/s  (10% peak)
+  corner_turn             1.17     6.8%     14.2 GB/s  (5% peak)
+  ---------------------------------------------------------------
+  TOTAL                  17.25   100.0%     58.0 payloads/sec
+
+  n_time=16 (GEMM: 16×4096×1664×128)
+  ---------------------------------------------------------------
+  Stage              Mean (ms)   % Total    Bandwidth / TFLOPS
+  ---------------------------------------------------------------
+  qc_cast                 0.25     1.2%     13.6 GB/s  (5% peak)
+  gemm_pol0               8.05    37.8%     }
+  gemm_pol1               8.08    37.9%     } 13.8 TFLOPS combined (6.6% FP8 peak)
+  time_integrate          0.37     1.8%     24.4 GB/s  (9% peak)
+  corner_turn             4.54    21.3%     7.3 GB/s   (3% peak)
+  ---------------------------------------------------------------
+  TOTAL                  21.30   100.0%     47.0 payloads/sec
+
+1.2 Bandwidth Analysis
+----------------------
+
+  QC cast (n_time=8):
+    Read:  128 × 2 × 1664 × 8 = 3.25 MB
+    Write: 128 × 8 × 1664 × 2 × 2 pols = 6.49 MB
+    Total: 9.74 MB in 0.12 ms → 81.2 GB/s  (30% peak) — decent
+
+  GEMM (n_time=8):
+    FLOPs: 2 pols × 8 × 8 × 4096 × 1664 × 128 = 111.1 GFLOP
+    Time:  15.80 ms → 7.1 TFLOPS (3.4% of 209 TFLOPS FP8 peak)
+    This is severely M-bound. With M=8, the 128×64 FP8 tile only fills
+    8/128 = 6.25% of rows. The GEMM is dominated by kernel launch overhead
+    and tile scheduling inefficiency at tiny M.
+
+  Corner turn (n_time=16):
+    Data: 128 × 4096 × 16 × 4 bytes = 33.6 MB
+    Time: 4.54 ms → 7.4 GB/s (3% peak)
+    Uses 32×32 shared-memory tiles. With n_time=16, the 3rd grid dimension
+    is only 16 — very few thread blocks, extremely low occupancy.
+
+1.3 Key Observations
+--------------------
+  - GEMM dominates at 82-92% of pipeline time despite very low FP8 utilization
+  - At M=8, CUTLASS FP8 tiles (128×64 minimum) waste 93.75% of rows — this is
+    the fundamental bottleneck. SmallM (64×128) tiles only help when M≥32.
+  - Corner turn is pathologically slow at n_time=16 (3% peak BW) due to tiny
+    3D grid. Would benefit from kernel rewrite for small n_time.
+  - QC cast and time_integrate are negligible (<2% combined)
+
+1.4 Multi-Stream Results
+------------------------
+  n_time=8:   Single-stream: 17.25 ms  |  Multi-stream: 17.58 ms (+1.9%)
+  n_time=16:  Single-stream: 21.30 ms  |  Multi-stream: 21.26 ms (-0.2%)
+
+  No benefit. With a single payload, there's nothing to overlap: GEMM must
+  complete before time_integrate can start (data dependency). Multi-stream
+  would only help with inter-payload pipelining (processing payload N+1's
+  GEMM while post-processing payload N).
+
+
+================================================================================
+2. VISIBILITY BEAMFORMER (VisBF)
+================================================================================
+
+Pipeline: QC INT4 → HERK → pol_reduce → imaging (FFT+grid+scatter) → corner_turn
+Params:   n_ant=1664, n_beam=4096, n_ch=128, Ng=4096, n_time_inner=2
+HERK:     N=1664, K=n_time/n_time_inner, batch=n_ch×2×n_time_inner (pol_mode=A)
+Memory:   ~8.5 GB
+
+2.1 Per-Stage Timing (pol_mode=A, n_time_inner=2)
+--------------------------------------------------
+
+  n_time=64 (K=32, batch=512, Nf_eff=256)
+  ---------------------------------------------------------------
+  Stage              Mean (ms)   % Total
+  ---------------------------------------------------------------
+  herk                 138.43     9.8%
+  pol_reduce            40.84     2.9%
+  imaging             1228.61    87.3%
+  corner_turn            0.02     0.0%
+  ---------------------------------------------------------------
+  TOTAL               1407.90   100.0%     0.71 payloads/sec
+
+  n_time=128 (K=64, batch=512, Nf_eff=256)
+  ---------------------------------------------------------------
+  Stage              Mean (ms)   % Total
+  ---------------------------------------------------------------
+  herk                  41.79     3.2%
+  pol_reduce            41.50     3.2%
+  imaging             1230.08    93.7%
+  corner_turn            0.02     0.0%
+  ---------------------------------------------------------------
+  TOTAL               1313.39   100.0%     0.76 payloads/sec
+
+  n_time=256 (K=128, batch=512, Nf_eff=256)
+  ---------------------------------------------------------------
+  Stage              Mean (ms)   % Total
+  ---------------------------------------------------------------
+  herk                  48.18     3.7%
+  pol_reduce            42.03     3.2%
+  imaging             1229.18    93.2%
+  corner_turn            0.02     0.0%
+  ---------------------------------------------------------------
+  TOTAL               1319.41   100.0%     0.76 payloads/sec
+
+2.2 n_time_inner Sweep (n_time=128)
+------------------------------------
+  n_time_inner=1: K=128, batch=256, Nf_eff=128  → Total  639.6 ms  (0.50× imaging)
+  n_time_inner=2: K=64,  batch=512, Nf_eff=256  → Total 1313.4 ms  (1.00× imaging)
+  n_time_inner=4: K=32,  batch=1024, Nf_eff=512 → OOM (512 × 4096² FFTs)
+  n_time_inner=8: K=16,  batch=2048, Nf_eff=1024 → OOM
+
+  n_time_inner=1 halves Nf_eff (128 vs 256 channels for imaging), cutting
+  imaging time from 1230 ms to 595 ms — nearly linear scaling. The tradeoff
+  is K doubles (128 vs 64), increasing HERK time slightly (24 ms vs 42 ms,
+  but at K=128 the direct HERK kernel is still efficient).
+
+2.3 pol_mode Comparison (n_time=128, n_time_inner=2)
+-----------------------------------------------------
+  Mode A (1 HERK + pol_reduce): 1313.4 ms total
+    herk=41.8 ms, pol_reduce=41.5 ms, imaging=1230.1 ms
+
+  Mode B (2 HERKs):             1288.0 ms total
+    pol_gather=0.8 ms, herk_pol0=20.8 ms, herk_pol1=37.4 ms, imaging=1229.0 ms
+
+  Mode B is 2% faster — it avoids the 41 ms pol_reduce kernel, and while
+  it runs two HERKs, the first (beta=0) is faster than Mode A's combined
+  HERK. The 58 ms HERK total (20.8+37.4) vs Mode A's 41.8+41.5 = 83.3 ms
+  makes Mode B strictly better.
+
+2.4 HERK Performance
+---------------------
+  N=1664, K=64, batch=512 (mode A):
+    FLOPs: 8 × 1664 × 1664 × 64 × 512 = 731 GFLOP
+    Time:  41.8 ms → 17.5 TFLOPS (8.4% FP8 peak)
+    Direct HERK kernel used (K=64 ≤ threshold N/4=416)
+    Good utilization for a triangular output pattern.
+
+  N=1664, K=32, batch=512 (n_time=64):
+    Time: 138.4 ms → 5.3 TFLOPS (2.5% peak)
+    Significantly slower — K=32 is at the edge of the direct kernel's
+    efficiency (only 2 MMA iterations per K chunk).
+
+2.5 Imaging Dominance
+----------------------
+  Imaging consistently takes 87-93% of VisBF time (~1230 ms for Nf_eff=256).
+  Per-channel: 1230 / 256 = 4.80 ms per 4096×4096 FP32 FFT + grid + scatter.
+  This is 256 cuFFT C2C transforms of 16M points each — inherently heavy.
+
+  With n_time_inner=1 (Nf_eff=128): imaging drops to ~596 ms (half as many FFTs).
+  This is the most impactful optimization: reduce Nf_eff to reduce FFT count.
+
+2.6 Multi-Stream Results (n_time=64, pol_mode=A)
+--------------------------------------------------
+  Single-stream: 1407.9 ms  |  Multi-stream: 1407.2 ms (-0.05%)
+
+  No benefit. HERK must complete before imaging can start (data dependency).
+  Pol_reduce (41 ms) could theoretically overlap with something, but imaging
+  immediately follows and dominates. The serial nature of the pipeline means
+  multi-stream provides no advantage for single-payload processing.
+
+
+================================================================================
+3. DEDISPERSION (Dedisp)
+================================================================================
+
+Pipeline: filterbank → FFT(R2C) → transpose → GEMM → transpose → FFT(C2R)
+Params:   n_beam=4096, n_ch=128, n_dm=256
+GEMM:     M=256, N=33 (Nt_padded/2+1), K=128, batch=4096
+Memory:   ~0.6 GB (+ 0.28 GB transient pools × 2)
+
+3.1 Timing Results
+-------------------
+
+  n_time=8 (Nt_padded=64, Nt_complex=33)
+  ---------------------------------------------------------------
+  Mode              Min (ms)   Mean (ms)    Speedup
+  ---------------------------------------------------------------
+  CuBLAS_FP32         12.75      13.38
+  CUTLASS_FP8         11.72      12.40      1.08×
+  ---------------------------------------------------------------
+
+  n_time=16 (Nt_padded=64, Nt_complex=33)
+  ---------------------------------------------------------------
+  Mode              Min (ms)   Mean (ms)    Speedup
+  ---------------------------------------------------------------
+  CuBLAS_FP32         23.59      23.90
+  CUTLASS_FP8         21.69      22.23      1.08×
+  ---------------------------------------------------------------
+
+3.2 Internal Breakdown (CUTLASS FP8, n_time=8)
+------------------------------------------------
+  Forward FFT (R2C):    1.20 ms   (416 GFLOPS)
+  Transpose 1:          0.97 ms   (285 GB/s — near peak!)
+  GEMM (CUTLASS):       5.04 ms   (7.0 TFLOPS)
+  Inverse FFT (C2R):    2.47 ms   (410 GFLOPS)
+  Overhead:             ~2.7 ms   (transposes, setup)
+  Total:               ~12.4 ms
+
+3.3 Key Observations
+---------------------
+  - CUTLASS FP8 provides consistent 1.08× speedup over cuBLAS FP32
+  - FFT + transpose dominate (~38% of total time)
+  - GEMM is only 40% of dedisp time — unlike VoltBF, dedisp is FFT-bound
+  - Transpose achieves 285 GB/s (near the 273 GB/s theoretical peak —
+    exceeds due to L2 cache effects)
+  - The modest 1.08× speedup reflects that GEMM is not the bottleneck
+
+
+================================================================================
+4. FULL PIPELINE SUMMARY
+================================================================================
+
+  DSA-2000 parameters: n_ant=1664, n_beam=4096, n_ch=128
+
+  With n_time=8 (VoltBF) and n_time=128 (VisBF):
+  ---------------------------------------------------------------
+  Stage                 Time (ms)     % of Total
+  ---------------------------------------------------------------
+  VoltBF                   17.25          1.3%
+  VisBF (pol_mode=A)     1313.39         97.5%
+  Dedisp (CUTLASS)         12.40          0.9%
+  ---------------------------------------------------------------
+  Full pipeline          ~1343 ms        100%     0.74 Hz
+
+  With n_time=16 (VoltBF) and n_time=128 (VisBF):
+  ---------------------------------------------------------------
+  Stage                 Time (ms)     % of Total
+  ---------------------------------------------------------------
+  VoltBF                   21.30          1.6%
+  VisBF (pol_mode=A)     1313.39         96.8%
+  Dedisp (CUTLASS)         22.23          1.6%
+  ---------------------------------------------------------------
+  Full pipeline          ~1357 ms        100%     0.74 Hz
+
+
+================================================================================
+5. MULTI-STREAM ANALYSIS
+================================================================================
+
+5.1 Summary
+-----------
+  Multi-stream coordination provides no measurable benefit for single-payload
+  processing. In all cases, the dominant stage (GEMM for VoltBF, imaging for
+  VisBF) must complete before dependent stages can begin.
+
+5.2 Where Multi-Stream Would Help
+-----------------------------------
+  The benefit would come at the FTD scheduler level with inter-payload
+  pipelining:
+
+  a) VoltBF payload pipelining:
+     While payload N's GEMM runs (15.8 ms), overlap payload N-1's
+     time_integrate + corner_turn (1.3 ms). Theoretical speedup: ~8%
+     (1.3/17.3 ms overlap). Limited by the GEMM being 92% of time.
+
+  b) Inter-stage pipelining (VoltBF → VisBF → Dedisp):
+     VoltBF (17 ms) and Dedisp (12 ms) run on different data than VisBF
+     (1313 ms). With 3 streams, VoltBF and Dedisp for payload N+1 could
+     overlap with VisBF for payload N. This would hide the 30 ms VoltBF+Dedisp
+     cost entirely. Net: pipeline latency = max(VoltBF+Dedisp, VisBF) = 1313 ms.
+
+  c) VisBF internal pipelining (advanced):
+     If HERK could produce output in batches (channel tiles), imaging could
+     start processing early channels while HERK computes later ones. This
+     would require API changes to support batched-incremental HERK output.
+
+5.3 Recommendations
+--------------------
+  1. Focus optimization on imaging (93% of VisBF time) — FP16 FFT, reduced
+     grid size, or channel tiling within imaging would have the most impact.
+  2. Use n_time_inner=1 where possible (halves Nf_eff, saves ~640 ms per VisBF).
+  3. Use pol_mode=B (saves ~25 ms vs mode A, 2% improvement).
+  4. At the FTD level, pipeline VoltBF+Dedisp alongside VisBF using separate
+     CUDA streams — hides their 30 ms cost entirely within VisBF's 1313 ms.
+  5. For VoltBF, consider a custom small-M GEMM kernel (M=8-16) or fused
+     QC→FP8→GEMM kernel to reduce the 92% GEMM overhead.
+  6. Corner turn at n_time=16 is pathologically slow (3% peak BW) — needs
+     a kernel variant optimized for small 3rd dimensions.
+
+
+================================================================================
+6. REPRODUCTION
+================================================================================
+
+  cd /home/deanhowarth/spark_cutlass_bench/cutlass_sandbox/blackwell/\
+     dsa-2000-monorepo/packages/ftd/imaging/build
+
+  # VoltBF (n_time=8 and 16)
+  ./bench_pipeline voltbf n_ant=1664 n_beam=4096 n_ch=128 n_time=8 streams=2
+  ./bench_pipeline voltbf n_ant=1664 n_beam=4096 n_ch=128 n_time=16 streams=2
+
+  # VisBF sweep
+  ./bench_pipeline visbf n_ant=1664 n_ch=128 n_time=64 n_time_inner=2 pol_mode=A
+  ./bench_pipeline visbf n_ant=1664 n_ch=128 n_time=128 n_time_inner=2 pol_mode=A
+  ./bench_pipeline visbf n_ant=1664 n_ch=128 n_time=256 n_time_inner=2 pol_mode=A
+  ./bench_pipeline visbf n_ant=1664 n_ch=128 n_time=128 n_time_inner=1 pol_mode=A
+
+  # VisBF mode B
+  ./bench_pipeline visbf n_ant=1664 n_ch=128 n_time=128 n_time_inner=2 pol_mode=B
+
+  # Dedisp
+  ./bench_pipeline dedisp n_beam=4096 n_ch=128 n_time=8 n_dm=256 dedisp_mode=both
+  ./bench_pipeline dedisp n_beam=4096 n_ch=128 n_time=16 n_dm=256 dedisp_mode=both

@@ -1,0 +1,1496 @@
+# CUTLASS HERK Performance Study: Chronoscope and Radio Camera Processor
+
+| Field | Value |
+|-------|-------|
+| **Platform** | NVIDIA GB10 (SM121, 48 SMs, 2418 MHz, 24 MB L2, 546 GB/s) |
+| **CUTLASS** | 4.3.5, production stg3 build (SM120a, FP6+FP4 enabled) |
+| **TCC** | Tensor-Core Correlator (v1.1+, SM120 FP8 E4M3) |
+| **Date** | February 2026 |
+| **Projects** | Chronoscope (DSA-2000): N=3328, N=1664, FP16 input, FP8 compute, K=16-4096, batch=4-1024 |
+| | Radio Camera Processor: N=3328, INT4 input, FP8/FP6 compute, FP32 output, K=199936, batch=1-8 |
+
+---
+
+## 1. Executive Summary
+
+This report covers two projects that use CUTLASS HERK for radio astronomy
+correlation: Chronoscope (DSA-2000) and the Radio Camera Processor (RCP).
+
+**Chronoscope (Sections 2-6, 8-9):**
+
+CUTLASS's direct HERK kernel outperforms TCC by 1.3x-3.7x per-batch at
+FP8 compute for N=3328 across K=64-512, and by 2.4x-8.6x for N=1664
+across K=16-4096. Batching significantly aids CUTLASS throughput at
+N=3328, with per-batch time improving up to 3x as batch count increases
+from 4 to 128. At the smaller N=1664, both libraries scale linearly.
+CUTLASS achieves higher per-batch efficiency through:
+
+1. Pre-cast data flow (FP16->FP8 done once outside the kernel)
+2. Tighter cp.async pipeline (3-buffer, register-free FP8 loads)
+3. Persistent mode at small K (eliminates block scheduling overhead)
+4. Packed triangle output (2x less output traffic than TCC's FP32)
+
+**Radio Camera Processor (Section 7A):**
+
+INT4 complex input at N=3328, K=199936 with FP32 output. CUTLASS's
+FP8 direct kernel achieves 196.5 TFLOPS at batch=1 (67.6 ms) and
+259.2 TFLOPS at batch=4 (51.3 ms/item), outperforming TCC fp4 by
+2.4x-3.3x (TCC best: 159.9 ms batch=1, 166.4 ms/item batch=4).
+The PIMPL API INT4->FP8->FP32 path achieves 48.1 TFLOPS (368 ms)
+due to multi-GEMM baseline routing -- optimization opportunity exists
+to route through the direct kernel. Memory: ~4.7 GB per batch element.
+
+**FP6 Compute Analysis (Section 7B):**
+
+FP6 E3M2 compute does NOT improve performance for either project.
+The FP8 direct kernel is 2.7x-6.0x faster than FP6 across all tested
+problem sizes. FP6 only wins against FP8 when both use the CUTLASS
+baseline (multi-GEMM) path, but the direct kernel makes this comparison
+irrelevant. See Section 7B for detailed analysis.
+
+---
+
+## 2. Architectural Comparison
+
+Both libraries share the same fundamental approach: they compute complex
+Hermitian correlations using real-valued FP8 tensor core MMA instructions
+via a conjugate permutation trick. The differences lie in data flow,
+pipelining depth, and output format.
+
+### 2.1 Shared Foundation: Conjugate Permutation Trick
+
+Both CUTLASS and TCC use an identical PTX trick to compute complex
+correlation from a single real MMA instruction:
+
+```
+conj_perm(v) = __byte_perm(v ^ 0x00800080, 0, 0x2301)
+```
+
+This transforms interleaved [Re, Im] FP8 pairs into [Im, -Re], so a
+single m16n8k32 MMA instruction:
+
+```
+mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+```
+
+computes both Re(C) = Ar\*Br + Ai\*Bi and Im(C) = Ai\*Br - Ar\*Bi
+simultaneously. This halves the number of MMA instructions compared
+to a naive 4-GEMM decomposition.
+
+### 2.2 Data Flow Comparison
+
+**CUTLASS Direct HERK:**
+
+```
+Interleaved FP16 Input (host)
+  |
+  v
+[Pre-cast Kernel] FP16 -> FP8 E4M3 (one-time, outside compute kernel)
+  |                                  N * 2K * batch FP8 bytes
+  v
+[Direct HERK Kernel]
+  |-- cp.async.cg.shared.global: FP8 -> SMEM (bypasses registers)
+  |-- __syncthreads
+  |-- Load fragments from SMEM (FP8 -> register)
+  |-- Conjugate permutation (register-only, __byte_perm)
+  |-- mma.sync (FP8 x FP8 -> FP32 accumulate)
+  |-- Store to packed triangle (FP32 -> FP16, register -> GMEM)
+  v
+Packed Triangle FP16 Output
+```
+
+**TCC:**
+
+```
+Pre-blocked Input (host arranges data into time blocks)
+  |
+  v
+[Correlator Kernel]
+  |-- memcpy_async / pipe: GMEM -> SMEM (format-specific stride)
+  |-- pipe.commit() + pipe.wait_prior<READ_AHEAD>()
+  |-- __syncthreads
+  |-- Load fragments from SMEM (format-dependent register shuffle)
+  |-- Conjugate permutation (same __byte_perm trick)
+  |-- mma_sync (same MMA instruction)
+  |-- Store to packed triangle (FP32 -> FP32/FP16, register -> GMEM)
+  v
+Packed Triangle FP32 Output
+```
+
+**Key data flow differences:**
+
+| Aspect | CUTLASS Direct | TCC |
+|--------|---------------|-----|
+| Input format | Interleaved FP16 complex | Pre-blocked FP8/FP16/FP4 complex |
+| FP8 conversion | One-time precast (separate kernel) | Inside kernel (fragment load) |
+| GMEM -> SMEM | cp.async.cg 16B (register-free) | memcpy_async via nvcuda pipeline |
+| SMEM layout | 2 tiles x 4KB (row + col) | nrRecv x nrPol x nrTimes per buf |
+| SMEM footprint | 16 KB (rectangle), 8 KB (diagonal) | ~32-128 KB (varies by block) |
+| Output format | Packed triangle FP16 interleaved | Packed triangle complex\<float\> |
+| Output bytes/vis | 4 bytes | 8 bytes |
+
+### 2.3 Pipelining Comparison
+
+CUTLASS uses a **2-phase approach**:
+
+**Phase 1 (Pre-Cast):**
+A single CUDA kernel converts all FP16 input to FP8 E4M3.
+This runs once before the compute kernel and writes N\*2K\*batch
+FP8 bytes to a device buffer. Cost: ~1-2% of total time.
+
+**Phase 2 (Direct HERK Kernel):**
+3-buffer cp.async pipeline with READ_AHEAD=2:
+
+```
+Prologue:  load buf[0], load buf[1]                    (2 async loads)
+Main loop: wait buf[i] | load buf[i+2] | compute buf[i]
+Epilogue:  wait buf[last] | compute buf[last]
+```
+
+Each "load" is cp.async.cg.shared.global (16 bytes, register-free).
+Each "compute" is 4x m16n8k32 MMA (K\_CHUNK=64, K\_SUBS=4).
+Only 1 `__syncthreads` per K iteration.
+
+TCC uses a **single-phase pipelined kernel**:
+
+Multi-buffer pipeline with 2-4 shared memory buffers:
+
+```
+Prologue:  load buf[0..READ_AHEAD-1]                   (2 async loads)
+Main loop: wait pipe | load buf[next] | compute buf[i]
+Epilogue:  wait pipe | compute buf[last]
+```
+
+Uses `nvcuda::experimental::pipeline` with memcpy\_async.
+Format-specific fragment loading shuffles data in registers.
+1 `__syncthreads` + 1 `pipe.wait_prior<READ_AHEAD>` per iteration.
+
+**Pipeline efficiency comparison:**
+
+| Metric | CUTLASS | TCC |
+|--------|---------|-----|
+| Pipeline depth | 3 buffers | 2-4 buffers |
+| READ_AHEAD | 2 | 2 |
+| Syncs per iter | 1 `__syncthreads` | 1 `__syncthreads` + 1 `pipe.wait` |
+| Loads per iter | cp.async 16B (register-free) | memcpy_async (may use regs) |
+| Compute per iter | 4x MMA (K=64) | varies by format |
+| Format conversion | None (pre-cast) | In fragment load |
+
+### 2.4 Thread and Block Organization
+
+**CUTLASS Direct HERK:**
+- BLOCK\_N = 32 receivers per block dimension
+- HERK\_THREADS = 128 (4 warps)
+- gridDim.x = N/32 \* (N/32 + 1) / 2 (triangle blocks)
+  - N=3328: 104 \* 105 / 2 = 5,460 blocks/batch
+  - N=1664: 52 \* 53 / 2 = 1,378 blocks/batch
+- gridDim.y = batch\_count (all batches in one launch)
+- SMEM: 16 KB per block (rectangle), 8 KB (diagonal)
+- Occupancy: 4+ blocks per SM (24 KB << 99 KB SM120 SMEM)
+
+**TCC Correlator:**
+- NR\_RECEIVERS\_PER\_BLOCK = 32, 48, or 64 (auto-selected)
+- NR\_WARPS = 4, THREADS = 128
+- gridDim.x = triangle blocks for NR\_RECEIVERS\_PER\_BLOCK
+  - N=3328 (block=32): 104 \* 105 / 2 = 5,460 blocks/batch
+  - N=1664 (block=32): 52 \* 53 / 2 = 1,378 blocks/batch
+- gridDim.y = nrChannels (= batch\_count)
+- SMEM: 32-128 KB per block (varies by block size and format)
+- Occupancy: 1-4 blocks per SM (depends on SMEM usage)
+
+The smaller SMEM footprint of CUTLASS (16 KB vs 32-128 KB) enables
+higher occupancy, which helps hide memory latency at small K.
+
+---
+
+## 3. Chronoscope: Why CUTLASS Is Superior at FP8
+
+The CUTLASS direct HERK kernel achieves 1.3x-3.7x higher throughput per
+batch than TCC at FP8 compute. This advantage stems from four factors:
+
+### 3.1 Pre-Cast Data Flow (eliminates in-kernel format conversion)
+
+CUTLASS separates the FP16->FP8 conversion into a one-time precast step:
+
+```
+cast_fp16_to_fp8_e4m3(A_fp16, A_fp8, N * 2K * batch, stream)
+```
+
+This conversion runs once before the compute kernel. The compute kernel
+then loads pure FP8 data via cp.async, which bypasses registers entirely
+(data flows GMEM -> SMEM -> MMA operand without touching registers).
+
+TCC performs format-specific data loading inside the kernel. Even for FP8,
+the fragment loading involves register-based shuffles:
+
+```
+load_complex_matrix_sync(aFrag, smem_ptr, ldm)
+  -> int2 tmp = ((const int2*) p)[...]
+  -> a.x[0] = tmp.x
+  -> a.x[1] = conj_perm(tmp.x)  // register-based conjugation
+```
+
+While both approaches ultimately feed the same MMA instruction, CUTLASS's
+pre-cast eliminates all format handling from the critical inner loop.
+
+### 3.2 Register-Free cp.async Loading
+
+CUTLASS uses direct PTX cp.async instructions:
+
+```
+cp_async_cg_16(smem_dst, gmem_src)
+  -> asm("cp.async.cg.shared.global [%0], [%1], 16;" ...)
+```
+
+These 16-byte asynchronous copies go directly from global memory to
+shared memory without consuming any registers. The pipeline control
+(commit, wait) uses PTX as well:
+
+```
+cp_async_commit()   -> asm("cp.async.commit_group;")
+cp_async_wait<N>()  -> asm("cp.async.wait_group N;")
+```
+
+TCC uses CUDA's `nvcuda::experimental::pipeline` API, which wraps cp.async
+but may add overhead for format-specific data layout requirements. TCC's
+fragment loading also involves explicit int2/int4 loads through registers
+before storing to SMEM, partially negating the cp.async advantage.
+
+### 3.3 Persistent Mode (Small K Optimization)
+
+For K <= 64 (K\_CHUNK), CUTLASS uses a persistent kernel variant:
+
+```c
+gridDim.x = min(sm_count * 4, total_work_groups)
+// Each block loops over work items instead of one-shot execution
+
+for (work = blockIdx.x; work < total_work; work += gridDim.x) {
+    // Compute triangle indices from work item
+    // Load data directly (single SMEM buffer, no pipeline)
+    // Compute MMA and store
+}
+```
+
+**Benefits:**
+- Eliminates block scheduling overhead (dominant at K=16-64)
+- Uses vectorized uint4 direct loads instead of cp.async pipeline
+- BATCH\_GROUP=4 amortizes triangle index computation across batches
+- 20% faster than non-persistent at K <= 64
+
+TCC does not have a persistent kernel variant. At small K, the large number
+of blocks (5,460 \* batch\_count) with minimal per-block computation means
+block scheduling overhead becomes a significant fraction of total time.
+
+### 3.4 Output Memory Traffic
+
+**CUTLASS output:** interleaved complex FP16 packed triangle
+- N\*(N+1)/2 complex elements \* 4 bytes/complex = ~22 MB per batch
+
+**TCC output:** complex\<float\> packed triangle
+- N\*(N+1)/2 complex elements \* 8 bytes/complex = ~44 MB per batch
+
+CUTLASS writes 2x less output data per batch. For large batch counts,
+this halves the output memory bandwidth requirement.
+
+At batch=128, total output traffic:
+- CUTLASS: 22 MB \* 128 = 2.8 GB
+- TCC: 44 MB \* 128 = 5.6 GB
+
+At 546 GB/s memory bandwidth, the output write alone takes:
+- CUTLASS: 5.1 ms minimum
+- TCC: 10.3 ms minimum
+
+This 2x output traffic difference directly impacts throughput at large
+batch counts where output becomes a significant fraction of total time.
+
+---
+
+## 4. Chronoscope: Batch Scaling Analysis
+
+### 4.1 Experimental Results
+
+All data: N=3328, FP8 compute, production stg3 build.
+
+**CUTLASS Direct HERK -- Per-Batch Time (ms):**
+
+| batch | K=64 | K=256 | K=512 | K=64 TF | K=256 TF | K=512 TF |
+|------:|-----:|------:|------:|--------:|---------:|---------:|
+| 4 | 0.515 | 0.280 | 1.858 | 8.2 | 60.9 | 18.3 |
+| 8 | 0.525 | 0.276 | 0.776 | 8.1 | 61.6 | 43.8 |
+| 16 | 0.418 | 0.297 | 0.651 | 10.2 | 57.3 | 52.3 |
+| 32 | 0.321 | 0.265 | 0.607 | 13.2 | 64.2 | 56.1 |
+| 64 | 0.291 | 0.256 | 0.608 | 14.6 | 66.4 | 56.0 |
+| 128 | 0.258 | 0.245 | 0.734 | 16.5 | 69.5 | 46.3 |
+| 256 | 0.390 | 0.390 | -- | 10.9 | 43.6 | -- |
+| 512 | 0.380 | 0.323 | -- | 11.2 | 52.6 | -- |
+
+**TCC FP8 -- Per-Batch Time (ms):**
+
+| batch | K=64 | K=256 | K=512 | K=1024 | K=64 TF | K=256 TF | K=512 TF |
+|------:|-----:|------:|------:|-------:|--------:|---------:|---------:|
+| 4 | 0.902 | 0.910 | 0.953 | 1.329 | 6.29 | 24.92 | 47.62 |
+| 8 | 0.902 | 0.951 | 0.953 | 1.291 | 6.29 | 23.84 | 47.60 |
+| 16 | 0.924 | 0.937 | 0.966 | 1.300 | 6.14 | 24.22 | 46.96 |
+| 32 | 0.905 | 0.901 | 0.965 | 1.274 | 6.27 | 25.18 | 47.03 |
+| 64 | 0.907 | 0.915 | 0.973 | 1.291 | 6.25 | 24.80 | 46.64 |
+| 128 | 0.904 | 0.912 | 0.966 | 1.281 | 6.27 | 24.87 | 46.97 |
+
+**CUTLASS vs TCC Speedup at batch=128:**
+
+| K | CUTLASS ms/batch | TCC ms/batch | Speedup |
+|--:|-----------------:|-------------:|--------:|
+| 64 | 0.258 | 0.904 | 3.5x |
+| 256 | 0.245 | 0.912 | 3.7x |
+| 512 | 0.734 | 0.966 | 1.3x |
+
+### 4.2 Batch Scaling Characteristics
+
+**TCC: Perfectly Linear Scaling**
+- Per-batch time is nearly constant across all batch counts (4-128)
+- K=64: 0.90 ms/batch +/- 1% at all batch sizes
+- K=256: 0.91 ms/batch +/- 3% at all batch sizes
+- K=512: 0.96 ms/batch +/- 2% at all batch sizes
+- All batches process in parallel via gridDim.y = nrChannels
+- No cross-batch data dependencies
+- TCC's per-batch time only depends on K (more K = more compute)
+
+**CUTLASS: Sub-Linear Scaling (batching improves per-batch efficiency)**
+- Per-batch time DECREASES as batch count increases (up to a point)
+- K=64: 0.515 ms/batch at batch=4 -> 0.258 ms/batch at batch=128
+  (2.0x improvement, GPU becomes better-saturated)
+- K=256: 0.280 ms/batch at batch=4 -> 0.245 ms/batch at batch=128
+  (1.14x improvement, already well-saturated)
+- K=512: 1.858 ms/batch at batch=4 -> 0.607 ms/batch at batch=32
+  (3.1x improvement, dramatic occupancy gain)
+- Degrades at batch=256+ when precast buffer exceeds L2 cache
+
+### 4.3 Why Batching Aids CUTLASS Performance
+
+The CUTLASS direct HERK kernel launches ALL batches in a single kernel
+via gridDim.y = batch\_count. This provides three key benefits:
+
+**Benefit 1: Improved GPU Occupancy**
+
+At K=64, N=3328: tri\_blocks = 5,460 blocks per batch.
+With 48 SMs and occupancy=4: 192 concurrent blocks.
+
+- batch=4: total = 21,840 blocks -> 114 waves
+- batch=128: total = 698,880 blocks -> 3,640 waves
+
+At low batch counts, the GPU may not be fully saturated because
+some blocks complete quickly (diagonal blocks do half the work of
+rectangle blocks). Higher batch counts smooth out this imbalance,
+keeping all SMs busy throughout execution.
+
+**Benefit 2: Amortized Fixed Costs**
+
+The pre-cast kernel (FP16->FP8) has a fixed launch overhead plus
+per-element conversion cost. For batch=4 at K=64:
+- precast elements = 3328 \* 128 \* 4 = 1.7M (negligible)
+
+For batch=128:
+- precast elements = 3328 \* 128 \* 128 = 54.5M (still fast)
+
+The HERK kernel launch itself has ~10-20 us overhead, which at
+batch=4 represents 1-2% of the 2.06 ms total, but at batch=128
+represents only 0.03-0.06% of the 33 ms total.
+
+**Benefit 3: Memory Traffic Amortization**
+
+The packed triangle output for N=3328 is ~22 MB per batch.
+The input is N \* 2K \* sizeof(FP8) per batch.
+
+At K=64: input = 3328 \* 128 \* 1 = 0.43 MB per batch,
+output = 22 MB per batch, ratio: output dominates (51:1)
+
+With multiple batches, the GPU can pipeline output writes from
+one batch with compute for another batch, hiding output latency.
+
+### 4.4 Batch Scaling Limits
+
+CUTLASS per-batch efficiency degrades at very high batch counts (256+):
+
+- K=256, batch=128: 0.245 ms/batch (69.5 TFLOPS) -- peak
+- K=256, batch=256: 0.390 ms/batch (43.6 TFLOPS) -- 37% degradation
+- K=256, batch=512: 0.323 ms/batch (52.6 TFLOPS) -- partial recovery
+
+The degradation at batch=256 is caused by the total FP8 precast buffer
+exceeding the L2 cache:
+
+```
+precast buffer = N * 2K * batch * sizeof(FP8)
+At K=256, batch=256: 3328 * 512 * 256 = 436 MB >> 24 MB L2
+```
+
+This forces precast data to be fetched from DRAM for every kernel read,
+increasing memory traffic. The baseline HERK path mitigates this with
+batch tiling (processing batch\_tile batches at a time to keep scratch
+in L2), but the direct kernel processes all batches in one launch.
+
+TCC does not exhibit this degradation because its per-batch SMEM working
+set is fixed (does not scale with batch count). However, TCC's FP32
+output format means it has 2x the output bandwidth pressure at all
+batch counts.
+
+---
+
+## 4A. Chronoscope: Small-N Analysis N=1664 (Half DSA-2000 Array)
+
+### 4A.1 Problem Geometry
+
+N=1664 represents half the DSA-2000 array (1664 antennas, 2 polarizations).
+Compared to N=3328, this problem has 4x fewer output elements and 4x fewer
+triangle blocks per batch:
+
+| Metric | N=3328 | N=1664 |
+|--------|-------:|-------:|
+| Triangle blocks | 5,460 | 1,378 |
+| Output/batch (CL) | 22.2 MB | 5.5 MB |
+| Output/batch (TCC) | 44.3 MB | 11.1 MB |
+| Total blocks @128 | 698,880 | 176,384 |
+| L2 batch tile | 1 | 2 |
+
+### 4A.2 K-Scaling Comparison (batch=128)
+
+All data: best of 5 runs, no concurrent GPU load. FP8 compute.
+
+**CUTLASS Direct HERK (N=1664, batch=128):**
+
+| K | Total ms | ms/batch | TFLOPS | GB/s | BW % |
+|--:|---------:|---------:|-------:|-----:|-----:|
+| 16 | 3.31 | 0.026 | 10.3 | 218.4 | 40.0% |
+| 32 | 3.46 | 0.027 | 19.7 | 213.1 | 39.0% |
+| 64 | 3.98 | 0.031 | 34.2 | 192.1 | 35.2% |
+| 128 | 4.68 | 0.037 | 58.1 | 174.7 | 32.0% |
+| 256 | 6.09 | 0.048 | 89.3 | 152.2 | 27.9% |
+| 512 | 9.07 | 0.071 | 120.0 | 126.3 | 23.1% |
+| 1024 | 14.48 | 0.113 | 150.4 | 109.3 | 20.0% |
+| 2048 | 25.54 | 0.200 | 170.5 | 96.1 | 17.6% |
+| 4096 | 47.16 | 0.368 | 184.7 | 89.0 | 16.3% |
+
+*(GB/s = external memory bandwidth: read input + write output)*
+*(BW % = fraction of 546 GB/s peak)*
+
+**TCC FP8 (N=1664, batch=128):**
+
+| K | Total ms | ms/batch | TFLOPS | GB/s | BW % |
+|--:|---------:|---------:|-------:|-----:|-----:|
+| 16 | 28.75 | 0.225 | 1.6 | 49.6 | 9.1% |
+| 32 | 28.96 | 0.226 | 3.1 | 49.5 | 9.1% |
+| 64 | 28.80 | 0.225 | 6.3 | 50.2 | 9.2% |
+| 128 | 28.90 | 0.226 | 12.6 | 51.0 | 9.3% |
+| 256 | 28.92 | 0.226 | 25.1 | 52.8 | 9.7% |
+| 512 | 29.96 | 0.234 | 48.5 | 54.6 | 10.0% |
+| 1024 | 37.45 | 0.293 | 77.5 | 49.5 | 9.1% |
+| 2048 | 61.08 | 0.477 | 95.1 | 37.5 | 6.9% |
+| 4096 | 128.46 | 1.003 | 90.4 | 24.6 | 4.5% |
+
+*(TCC external traffic: FP8 input + FP32 complex output)*
+
+**CUTLASS vs TCC Speedup (N=1664, batch=128):**
+
+| K | CUTLASS ms/batch | TCC ms/batch | Speedup |
+|--:|-----------------:|-------------:|--------:|
+| 16 | 0.026 | 0.225 | 8.6x |
+| 32 | 0.027 | 0.226 | 8.3x |
+| 64 | 0.030 | 0.225 | 7.4x |
+| 128 | 0.037 | 0.226 | 6.2x |
+| 256 | 0.047 | 0.226 | 4.8x |
+| 512 | 0.070 | 0.234 | 3.3x |
+| 1024 | 0.113 | 0.293 | 2.6x |
+| 2048 | 0.201 | 0.477 | 2.4x |
+| 4096 | 0.368 | 1.003 | 2.7x |
+
+CUTLASS is 2.4x-8.6x faster across ALL K values, a significantly larger
+advantage than at N=3328 (1.3x-3.7x).
+
+### 4A.3 TCC Output-Dominance at Small N
+
+TCC shows a remarkable pattern at N=1664: total execution time is nearly
+constant at ~29 ms for K=16 through K=512, despite a 32x increase in
+compute work. This indicates TCC is completely dominated by non-compute
+overhead at small N:
+
+TCC at N=1664, batch=128:
+- K=16: 28.75 ms -> 1.6 TFLOPS (0.7% of peak)
+- K=256: 28.92 ms -> 25.1 TFLOPS (10.6% of peak)
+- K=512: 29.96 ms -> 48.5 TFLOPS (20.4% of peak)
+- K=1024: 37.45 ms -> 77.5 TFLOPS (32.6% of peak) <- compute begins to matter
+
+TCC doesn't break free of its overhead floor until K=1024, where compute
+time finally exceeds the ~29 ms fixed overhead.
+
+The overhead sources are:
+1. Block scheduling: 176,384 blocks at ~0.16 us/block = ~28 ms
+2. Output traffic: 1.42 GB at 546 GB/s = 2.6 ms (small contribution)
+3. SMEM allocation/pipeline setup per block
+
+In contrast, CUTLASS at N=1664 scales smoothly with K because:
+1. Persistent mode at K<=64: only 192 persistent blocks (vs 176K TCC blocks)
+2. Pre-cast separates format conversion from compute
+3. FP16 output: 0.71 GB (half of TCC's 1.42 GB)
+
+### 4A.4 Batch Scaling at N=1664
+
+At K=256, batch=128:
+
+**CUTLASS Batch Scaling (N=1664, K=256):**
+
+| batch | ms | ms/batch | TFLOPS |
+|------:|----:|---------:|-------:|
+| 8 | 0.38 | 0.048 | 89.3 |
+| 16 | 0.83 | 0.052 | 81.5 |
+| 32 | 1.54 | 0.048 | 88.5 |
+| 64 | 3.16 | 0.049 | 86.3 |
+| 128 | 6.04 | 0.047 | 90.1 |
+| 256 | 11.84 | 0.046 | 92.0 |
+| 512 | 23.06 | 0.045 | 94.4 |
+| 1024 | 44.89 | 0.044 | 97.0 |
+
+**TCC Batch Scaling (N=1664, K=256):**
+
+| batch | ms | ms/batch | TFLOPS |
+|------:|------:|---------:|-------:|
+| 4 | 0.921 | 0.230 | 24.6 |
+| 8 | 1.823 | 0.228 | 24.9 |
+| 16 | 3.641 | 0.228 | 24.9 |
+| 32 | 7.251 | 0.227 | 25.0 |
+| 64 | 14.546 | 0.227 | 25.0 |
+| 128 | 28.940 | 0.226 | 25.1 |
+| 256 | 58.828 | 0.230 | 24.7 |
+| 512 | 117.031 | 0.229 | 24.8 |
+| 1024 | 234.050 | 0.229 | 24.8 |
+
+Unlike N=3328 where CUTLASS showed strong sub-linear batch scaling (2-3x
+per-batch improvement from batch=4 to batch=128), at N=1664 BOTH libraries
+exhibit nearly constant per-batch time:
+
+- CUTLASS: 0.044-0.052 ms/batch (1.18x range, batch=8 to batch=1024)
+- TCC: 0.226-0.230 ms/batch (1.02x range, batch=4 to batch=1024)
+
+This is because N=1664 is small enough that even low batch counts provide
+sufficient GPU occupancy. At batch=8, CUTLASS has 1,378 \* 8 = 11,024 blocks
+(57 waves for 192 concurrent), while at N=3328 batch=4, CUTLASS has
+5,460 \* 4 = 21,840 blocks but with more work per block. The GPU is
+adequately saturated at all tested batch counts.
+
+### 4A.5 Why CUTLASS Advantage Grows at Smaller N
+
+The CUTLASS speedup increases from 1.3x-3.7x (N=3328) to 2.4x-8.6x
+(N=1664) because:
+
+1. **TCC block overhead dominates:**
+   TCC launches 176,384 blocks (batch=128) with ~0.16 us overhead per
+   block. This creates a ~29 ms floor regardless of K. CUTLASS's
+   persistent kernel launches only 192 blocks.
+
+2. **Output traffic ratio preserved but compute shrinks:**
+   CUTLASS: 0.71 GB output. TCC: 1.42 GB output. Ratio: 2x (same).
+   But compute per batch drops 4x (N^2 scaling). Output becomes a
+   larger fraction of total time, amplifying CUTLASS's 2x advantage.
+
+3. **Arithmetic intensity drops:**
+   At N=1664 K=64: AI = 8\*1664^2\*64 / (1664\*128\*2 + 1664\*1665/2\*4)
+   = ~178 FLOPs/byte (< ridge 435 -> memory-bound)
+   Memory-bound regime favors CUTLASS's lower traffic.
+
+| N | CUTLASS speedup range (batch=128, FP8) |
+|---|----------------------------------------|
+| 3328 (full) | 1.3x - 3.7x (K=512 - K=64) |
+| 1664 (half) | 2.4x - 8.6x (K=2048 - K=16) |
+
+---
+
+## 5. Baseline HERK Path (3 Sub-GEMMs)
+
+At large K (K > N/4 for single HERK, K > N/2 for batched), CUTLASS
+switches from the direct kernel to a 3 sub-GEMM baseline path. This
+path decomposes the complex HERK as follows:
+
+```
+Re(C) = Ar * Ar^T + Ai * Ai^T    (1 GEMM with stacked-K trick)
+Im(C) = Ai * Ar^T                  (1 GEMM, then antisymmetrize)
+```
+
+The stacked-K strategy (Strategy 5D) further reduces this to 2 GEMMs
+when M\*N > (M+N)\*K by stacking operands along the K dimension:
+
+```
+[Ar | Ai] * [Ar | Ai]^T = Ar*Ar^T + Ai*Ai^T
+```
+
+**Baseline data flow:**
+
+```
+Interleaved FP16 Input
+  |
+  v
+[Deinterleave] -> Ar (planar), Ai (planar)
+  |
+  v
+[FP16 -> FP8 Cast] -> Ar_fp8, Ai_fp8
+  |
+  v
+[GEMM 1] Re(C) = Ar_fp8 * Ar_fp8^T + Ai_fp8 * Ai_fp8^T  (stream_a)
+[GEMM 2] temp = Ai_fp8 * Ar_fp8^T                          (stream_b)
+  |
+  v
+[Antisymmetrize + Pack] Im(C_ij) = temp_ij - temp_ji -> packed triangle
+  |
+  v
+[Interleave] Re, Im -> interleaved packed output
+```
+
+**Key overhead sources:**
+- 2x N\*N scratch buffers per batch (Re(C) and temp)
+- Deinterleave + interleave kernels
+- 2 separate GEMM launches (on 2 streams, overlapped)
+- Antisymmetrize kernel
+
+**Batch tiling:** when scratch exceeds L2 (4\*N^2\*batch > L2\_bytes),
+the batch dimension is tiled:
+
+```
+batch_tile = L2_bytes / (4 * N^2)
+Example: N=3328, L2=24 MB -> batch_tile = 24M / 44.3M = 0 -> 1
+```
+
+Each tile iteration runs the full pipeline (deinterleave, cast, GEMMs,
+antisymmetrize, pack) for batch\_tile batches. This keeps N\*N scratch
+in L2 but adds per-tile pipeline overhead.
+
+TCC has no equivalent mode -- it always uses the single-kernel approach,
+which is advantageous at large K where the direct kernel's block-level
+triangle decomposition becomes less efficient than CUTLASS's GEMM-level
+parallelism.
+
+---
+
+## 6. Memory Traffic Analysis
+
+### 6.1 External Memory Traffic (User-Visible)
+
+Per batch at N=3328:
+
+- Input: N \* 2K \* sizeof(FP16) = 3328 \* 2K \* 2 bytes
+- Output: N\*(N+1)/2 \* 2 \* sizeof(FP16) = 5,541,696 \* 2 \* 2 = 22.2 MB
+
+| K | Input (MB) | Output (MB) | Total | Arithmetic Int. |
+|--:|-----------:|------------:|------:|----------------:|
+| 16 | 0.20 | 22.2 | 22.4 | 1214 FLOPs/byte |
+| 64 | 0.81 | 22.2 | 23.0 | 757 FLOPs/byte |
+| 256 | 3.25 | 22.2 | 25.4 | 274 FLOPs/byte |
+| 512 | 6.50 | 22.2 | 28.7 | 167 FLOPs/byte |
+| 1024 | 12.99 | 22.2 | 35.2 | 100 FLOPs/byte |
+| 4096 | 51.97 | 22.2 | 74.2 | 41 FLOPs/byte |
+
+Ridge point (FP8): **435 FLOPs/byte** (at 237.7 TFLOPS / 546 GB/s)
+
+- For K <= 256, external arithmetic intensity > ridge -> **compute-bound**
+- For K >= 512, external AI drops below ridge -> **memory-bound**
+
+### 6.2 Internal Memory Traffic (Hidden from User)
+
+**CUTLASS Direct HERK** (additional internal traffic per batch):
+- Precast buffer: N \* 2K bytes (FP8, read once by compute kernel)
+- Total internal: N \* 2K bytes
+
+**CUTLASS Baseline HERK** (additional per batch):
+- Deinterleave: 2 \* N \* K \* 2 bytes (read input, write Ar/Ai)
+- FP8 cast: 2 \* N \* K bytes (read Ar/Ai FP16, write FP8)
+- Scratch: 2 \* N^2 \* 2 bytes (Re and temp matrices, read/write)
+- Antisymmetrize: N^2 \* 2 bytes (read temp, write Im packed)
+- Interleave: N\*(N+1) \* 2 bytes (read Re/Im packed, write output)
+- Total: ~8 \* N^2 bytes + 6 \* N \* K bytes
+- At N=3328: ~89 MB + 6\*N\*K bytes per batch
+
+**TCC** (additional internal traffic per batch):
+- None beyond GMEM -> SMEM -> Register -> GMEM
+- All data movement is pipeline-internal (cp.async -> SMEM -> MMA)
+- Output write: N\*(N+1)/2 \* 8 bytes (FP32 complex)
+
+The baseline HERK's 89 MB internal scratch dominates total memory traffic
+for small K, making the direct kernel's lower internal traffic critical
+for small-K performance (no N^2 scratch buffers).
+
+### 6.3 Memory Footprint Comparison
+
+Device memory per batch at N=3328:
+
+**CUTLASS Direct:** Input (N\*2K\*2) + Output (N\*(N+1)/2\*4) + Precast (N\*2K)
+- At K=256: 3.25 + 22.2 + 1.63 = 27.1 MB/batch
+
+**CUTLASS Baseline:** Input + Output + 2\*N^2\*2 + 2\*N\*K\*2 + 2\*N\*K
+- At K=256: 3.25 + 22.2 + 44.3 + 3.25 + 1.63 = 74.6 MB/batch
+
+**TCC:** Input (N\*2K\*2) + Output (N\*(N+1)/2\*8)
+- At K=256: 3.25 + 44.3 = 47.6 MB/batch
+
+GB10 VRAM: **52 GB**
+
+Maximum batch count (K=256):
+- CUTLASS Direct: 52 GB / 27.1 MB = ~1,918 batches
+- CUTLASS Baseline: 52 GB / 74.6 MB = ~697 batches (batch tiling unlimited)
+- TCC: 52 GB / 47.6 MB = ~1,092 batches
+
+*Note: CUTLASS baseline uses batch tiling (batch\_tile=1 for N=3328),
+so scratch buffers are reused across tiles. Effective limit is set
+by input + output only, similar to direct mode.*
+
+### 6.4 Achieved Bandwidth (batch=128, FP8)
+
+External bandwidth measures actual data throughput: read input + write output.
+Peak memory bandwidth: 546 GB/s.
+
+**CUTLASS Direct HERK -- Achieved Bandwidth:**
+
+| K | N=3328 ms | N=3328 GB/s | N=3328 BW % | N=1664 ms | N=1664 GB/s | N=1664 BW % |
+|--:|----------:|------------:|------------:|----------:|------------:|------------:|
+| 64 | 25.59 | 115.1 | 21.1% | 3.98 | 192.1 | 35.2% |
+| 256 | 31.91 | 102.5 | 18.8% | 6.09 | 152.2 | 27.9% |
+| 512 | 38.82 | 95.5 | 17.5% | 9.07 | 126.3 | 23.1% |
+| 1024 | 52.50 | 87.3 | 16.0% | 14.48 | 109.3 | 20.0% |
+| 4096 | -- | -- | -- | 47.16 | 89.0 | 16.3% |
+
+**TCC FP8 -- Achieved Bandwidth:**
+
+| K | N=3328 ms | N=3328 GB/s | N=3328 BW % | N=1664 ms | N=1664 GB/s | N=1664 BW % |
+|--:|----------:|------------:|------------:|----------:|------------:|------------:|
+| 64 | 115.80 | 49.5 | 9.1% | 28.80 | 50.2 | 9.2% |
+| 256 | 116.70 | 50.5 | 9.2% | 28.92 | 52.8 | 9.7% |
+| 512 | 123.60 | 49.4 | 9.1% | 29.96 | 54.6 | 10.0% |
+| 1024 | -- | -- | -- | 37.45 | 49.5 | 9.1% |
+| 4096 | -- | -- | -- | 128.46 | 24.6 | 4.5% |
+
+**Key bandwidth observations:**
+
+1. TCC bandwidth is capped at ~50 GB/s (9-10% of peak) regardless of
+   N and K. This means TCC is NOT memory-bandwidth limited -- it is
+   kernel overhead limited (block scheduling, SMEM allocation/pipeline
+   setup, fragment loading overhead).
+
+2. CUTLASS achieves 2x-4.4x higher bandwidth than TCC, with the
+   advantage growing at smaller N:
+   - N=3328 K=64: 115.1 vs 49.5 GB/s (2.3x)
+   - N=1664 K=64: 192.1 vs 50.2 GB/s (3.8x)
+   - N=1664 K=16: 218.4 vs 49.6 GB/s (4.4x)
+
+3. CUTLASS bandwidth INCREASES at smaller N (218 GB/s at N=1664 K=16
+   vs 115 GB/s at N=3328 K=64). This is because the persistent kernel
+   at small N/K achieves higher per-SM throughput with fewer blocks
+   and less scheduling overhead.
+
+4. CUTLASS bandwidth decreases with K: from 218 GB/s (K=16) to 89 GB/s
+   (K=4096) at N=1664. This transition reflects the shift from memory-
+   bound (output-dominated) to compute-bound regime. The crossover
+   occurs around K=256-512 where TFLOPS utilization overtakes BW
+   utilization as the primary metric.
+
+5. TCC external traffic is dominated by FP32 output: at K=64, input is
+   0.027 GB but output is 1.42 GB (52:1 ratio at N=1664). TCC's 8-byte
+   output format makes it inherently more bandwidth-hungry than
+   CUTLASS's 4-byte output format.
+
+**Bandwidth efficiency comparison at K=256, batch=128:**
+
+| | Total I/O | Time | BW (GB/s) | BW Eff |
+|----------|----------:|--------:|---------:|-------:|
+| CL N=3328 | 5.89 GB | 31.9ms | 102.5 | 18.8% |
+| CL N=1664 | 1.53 GB | 6.1ms | 152.2 | 27.9% |
+| TCC N=3328 | 5.89 GB | 116.7ms | 50.5 | 9.2% |
+| TCC N=1664 | 1.53 GB | 28.9ms | 52.8 | 9.7% |
+
+CUTLASS achieves higher bandwidth efficiency because its inner loop
+(pre-cast FP8 + register-free cp.async + persistent scheduling) has
+lower per-element overhead than TCC's (in-kernel format conversion +
+nvcuda pipeline + per-block scheduling).
+
+---
+
+## 7A. Radio Camera Processor: INT4 -> FP8 -> FP32 Batch Study
+
+The Radio Camera Processor (RCP) accepts INT4 complex interleaved input and
+computes HERK with FP8 tensor cores, producing FP32 packed triangle output.
+The key problem size is N=3328, K=199936 -- an extremely compute-bound
+workload with arithmetic intensity AI = 26,624 FLOPs/byte.
+
+### 7A.1 Problem Characteristics
+
+- N = M = 3328 (antenna pairs)
+- K = 199936 (time samples)
+- Input: INT4 sign-magnitude complex (1 byte per complex element)
+- Compute: FP8 E4M3 (via INT4->FP16->FP8 pipeline)
+- Output: FP32 packed triangle (N\*(N+1)/2 complex per batch)
+- FLOPs per batch: 8 \* 3328^2 \* 199936 = 17.72 TFLOP
+
+**Pipeline:**
+
+```
+INT4 -> [cast kernel] -> FP16 interleaved -> [precast] -> FP8
+     -> [direct HERK kernel] -> FP32 packed triangle
+```
+
+**Memory per batch:**
+
+| Component | Size |
+|-----------|-----:|
+| Input A (INT4) | 665 MB |
+| Internal FP16 | 2,660 MB |
+| Internal FP8 | 1,330 MB |
+| Output C (FP32) | 44 MB |
+| **Total per batch** | **~4,700 MB** |
+
+### 7A.2 CUTLASS Batch Scaling Results (PIMPL API)
+
+INT4 -> FP8 -> FP32, N=3328, K=199936
+*(PIMPL API, stg3 build, best of 3 trials, 3 timed runs each)*
+
+| batch | total\_ms | ms/item | TFLOPS | GB/s | VRAM |
+|------:|---------:|--------:|-------:|-----:|-----:|
+| 1 | 368.5 | 368.5 | 48.1 | 1.9 | 4.7 GB |
+| 2 | 736.7 | 368.3 | 48.1 | 1.9 | 9.4 GB |
+| 4 | 1493.3 | 373.3 | 47.5 | 1.9 | 18.8 GB |
+| 8 | 3152.7 | 394.1 | 45.0 | 1.8 | 37.6 GB |
+
+TFLOPS = 8\*N^2\*K\*batch / time (effective complex HERK FLOPs)
+Peak FP8 efficiency: 20.2% (batch=1) to 18.9% (batch=8)
+
+*Note: These PIMPL API results use the multi-GEMM baseline path because the
+PIMPL API's INT4->FP32 dispatch routes through `HERK_batched_fp32out()` which
+uses CUTLASS GEMMs (not the direct HERK kernel). See 7A.3 for direct kernel
+comparison.*
+
+### 7A.2b CUTLASS Direct Kernel Results (Example Binary)
+
+FP16 -> FP8, N=3328, K=199936 (stg3 build, example binary)
+Direct HERK kernel (24 KB SMEM, single-launch PTX)
+
+| batch | total\_ms | ms/item | TFLOPS | GB/s |
+|------:|---------:|--------:|-------:|-----:|
+| 1 | 67.6 | 67.6 | 196.5 | 39.7 |
+| 4 | 205.0 | 51.3 | 259.2 | 52.4 |
+
+The direct kernel achieves 109% of theoretical FP8 peak at batch=4 (the
+TFLOPS metric counts 6\*N^2\*K for 3 sub-GEMM equivalents). The actual
+wall-clock efficiency is ~82% (single HERK kernel vs 4-GEMM baseline).
+
+### 7A.2c TCC Comparison at K=199936
+
+TCC benchmark, N=3328, K=199936 (median of 10 runs)
+
+| format | batch | total\_ms | TFLOPS | GB/s |
+|--------|------:|---------:|-------:|-----:|
+| fp8 | 1 | 329.9 | 53.7 | 8.1 |
+| fp8 | 4 | 1361.9 | 52.0 | 7.9 |
+| fp4 | 1 | 159.9 | 110.8 | 16.8 |
+| fp4 | 4 | 665.6 | 106.5 | 16.1 |
+| fp16 | 1 | 688.4 | 25.7 | 3.9 |
+
+TCC fp4 is 2.1x faster than TCC fp8 at K=199936, consistent with the
+2x theoretical throughput advantage of FP4 tensor cores.
+
+### 7A.2d CUTLASS vs TCC Comparison Summary (K=199936)
+
+Best time per library at N=3328, K=199936:
+
+| batch | CL best | CL prec | CL TF | TCC best | TCC prec | CL/TCC |
+|------:|--------:|---------|------:|---------:|----------|-------:|
+| 1 | 67.6ms | FP8 dir | 196.5 | 159.9ms | fp4 | 2.37x |
+| 4 total | 205.0 | FP8 dir | 259.2 | 665.6 | fp4 | 3.25x |
+| 4 /item | 51.3 | FP8 dir | - | 166.4 | fp4 | 3.25x |
+
+CUTLASS FP8 direct kernel is 2.4x-3.3x faster than TCC's best precision
+(fp4) at the RCP problem size. Key advantages:
+- Single-kernel launch vs TCC's per-K-chunk processing
+- FP16 packed triangle output (half the output traffic of TCC's FP32)
+- Pre-cast pipeline (FP16->FP8 done once, not per MMA)
+- Batch amortization: CUTLASS improves from 67.6 to 51.3 ms/item (1.32x)
+  while TCC degrades from 159.9 to 166.4 ms/item (0.96x) at batch=4
+
+*Note on INT4 input: The direct kernel timings use FP16 input. Adding
+INT4->FP16 conversion adds ~5-15 ms per batch element (~7% overhead),
+still maintaining >2x advantage over TCC.*
+
+**Key observations:**
+- Near-linear batch scaling: batch=2 has identical per-item time to batch=1.
+  At batch=8, per-item time degrades only 7% (394 vs 368 ms) via PIMPL API.
+- Compute-bound: at AI=26,624, the 1.9 GB/s achieved bandwidth is negligible
+  compared to the 546 GB/s peak. All time is spent in tensor core compute.
+- Memory-limited: batch=8 uses 37.6 GB (29% of 128 GB VRAM). Batch=16 would
+  require 75 GB, feasible but tight. Batch=32 would OOM.
+- The PIMPL API's 20% peak efficiency reflects overhead of the INT4->FP16->FP8
+  conversion pipeline plus the baseline multi-GEMM decomposition at K >> N/2.
+  The direct kernel achieves 82-109% peak efficiency.
+
+### 7A.3 Comparison: Direct Kernel vs PIMPL Pipeline
+
+The PIMPL API INT4->FP8->FP32 pipeline (368 ms/item) is slower than the
+raw FP8 direct HERK kernel (51 ms/item) because:
+
+1. The PIMPL API uses the multi-GEMM baseline at K=199936 (K >> N/2)
+2. INT4->FP16 conversion adds ~5 ms overhead
+3. FP32 output epilogue is slower than FP16
+
+The example binary's "Batched Baseline" line on the stg3 build always uses
+the direct kernel (FP8 baseline GEMM exceeds SM120 SMEM), achieving:
+
+- FP8 direct (batch=4): 204 ms total, 51 ms/item, 260 TFLOPS\*
+  *(\*TFLOPS uses 6\*N^2\*K notation = 3 sub-GEMM equivalents)*
+
+This 7.2x gap between PIMPL and direct kernel paths at K=199936 indicates
+significant optimization opportunity in the PIMPL pipeline for large-K
+problems. The direct kernel should be usable at any K since it has only
+24 KB SMEM footprint and O(K) compute scaling.
+
+---
+
+## 7B. FP6 Compute Precision Analysis
+
+FP6 E3M2 uses 6-bit tensor core elements (vs 8-bit FP8), reducing data
+bandwidth by 25%. Both FP8 and FP6 have the same peak throughput on GB10
+(237.7 TFLOPS). This section evaluates whether FP6 improves performance
+for the Chronoscope and RCP workloads.
+
+### 7B.1 FP6 vs FP8 Compute Path Differences
+
+**FP8 (direct kernel path):**
+
+```
+FP16 -> [precast kernel] -> FP8 interleaved
+-> [single-launch PTX direct HERK] -> packed triangle
+SMEM: 24 KB, single kernel launch, cp.async pipeline
+```
+
+**FP6 (CUTLASS baseline path):**
+
+```
+FP16 -> [deinterleave] -> planar FP16
+-> [MXFP pack kernel] -> FP6 E3M2 + scale factors
+-> [3x block-scaled GEMM launches] -> planar FP16
+-> [interleave + pack to triangle]
+SMEM: 82 KB (block-scaled kernel), multiple launches
+```
+
+The FP6 path requires MXFP preprocessing (block-scaled packing with
+128-element scale factors), three separate GEMM kernel launches per
+batch tile, and planar-to-interleaved conversion. The direct HERK kernel
+bypasses all of this overhead.
+
+### 7B.2 Chronoscope N=3328 Results
+
+FP8 direct kernel vs FP6 baseline, batch=128
+
+| K | FP8 (ms) | FP8 TF | FP6 (ms) | FP6 TF | FP8/FP6 |
+|--:|---------:|-------:|---------:|-------:|--------:|
+| 128 | 27.6 | 39.5 | 97.8 | 11.1 | 3.6x |
+| 256 | 31.7 | 68.7 | 95.9 | 22.7 | 3.0x |
+| 512 | 38.3 | 113.6 | 133.8 | 32.6 | 3.5x |
+| 1024 | 53.7 | 162.3 | 178.1 | 48.9 | 3.3x |
+| 2048 | 81.7 | 213.1 | 242.2 | 71.9 | 3.0x |
+| 4096 | 144.2 | 241.6 | 386.5 | 90.2 | 2.7x |
+
+FP8 direct is **2.7x-3.6x faster** than FP6 across all K values.
+
+### 7B.3 Chronoscope N=1664 Results
+
+FP8 direct kernel vs FP6 baseline, batch=128
+
+| K | FP8 (ms) | FP8 TF | FP6 (ms) | FP6 TF | FP8/FP6 |
+|--:|---------:|-------:|---------:|-------:|--------:|
+| 128 | 4.6 | 59.5 | 24.6 | 11.1 | 5.4x |
+| 256 | 6.1 | 89.7 | 25.6 | 21.3 | 4.2x |
+| 512 | 8.9 | 122.3 | 37.9 | 28.7 | 4.3x |
+| 1024 | 14.7 | 147.9 | 53.4 | 40.8 | 3.6x |
+| 2048 | 25.5 | 170.9 | 79.0 | 55.1 | 3.1x |
+| 4096 | 47.1 | 184.8 | 131.9 | 66.0 | 2.8x |
+
+At N=1664 the gap is even larger (**2.8x-5.4x**) because the MXFP
+preprocessing overhead is a larger fraction of the total time.
+
+### 7B.4 RCP K=199936 Results
+
+N=3328, batch=4 (example binary, stg3 build):
+
+- FP8 direct: 204.5 ms, 260 TFLOPS -> 51.1 ms/item
+- FP6 baseline: 1230 ms, 43 TFLOPS -> 307.5 ms/item
+- **FP8 is 6.0x faster**
+
+At K=199936, the FP6 MXFP preprocessing is massive: each of the 3
+sub-GEMMs requires packing N\*K = 665 million FP16 elements into FP6
+with 128-element block scaling. This dominates the 1230 ms runtime.
+
+### 7B.5 FP6 vs FP8 Baseline (Without Direct Kernel)
+
+When comparing FP6 against FP8 using the SAME baseline multi-GEMM path
+(i.e., no direct kernel), FP6 does eventually win at large K:
+
+N=3328, batch=128 (`tune_api` build, FP8 baseline forced):
+
+| K | FP8 bl ms | FP6 bl ms | FP6/FP8 |
+|--:|----------:|----------:|--------:|
+| 128 | 30.4 | 97.4 | 3.2x slow |
+| 256 | 48.2 | 95.9 | 2.0x slow |
+| 512 | 81.4 | 133.8 | 1.6x slow |
+| 1024 | 155.5 | 178.1 | 1.1x slow |
+| 2048 | 292.6 | 242.2 | 1.2x FAST |
+| 4096 | 476.7 | 386.5 | 1.2x FAST |
+
+The crossover occurs at K~1500: below this, MXFP preprocessing overhead
+dominates; above this, the 25% bandwidth reduction wins. However, this
+comparison is academic because the FP8 direct kernel is always available
+and always faster than either baseline path.
+
+### 7B.6 Why FP6 Does Not Help
+
+1. The FP8 direct kernel uses a single-launch PTX kernel (24 KB SMEM)
+   that achieves 68-101% of peak FP8 throughput. FP6 cannot use this
+   kernel because it requires FP8 interleaved data.
+
+2. FP6 must use the CUTLASS baseline path (3 separate GEMM launches)
+   with MXFP block-scaled preprocessing. This adds 100-300 ms overhead
+   regardless of K.
+
+3. FP8 and FP6 have identical peak throughput (237.7 TFLOPS on GB10).
+   There is no compute-side advantage to FP6 -- only a bandwidth
+   advantage from 25% smaller elements.
+
+4. The bandwidth advantage of FP6 only materializes at K >= 2048 when
+   using the same (baseline) dispatch path, and even then it provides
+   only 1.2x improvement -- far less than the 2.7x-6x advantage of the
+   FP8 direct kernel.
+
+5. For the RCP (K=199936), the MXFP preprocessing cost for 665M elements
+   per sub-GEMM makes FP6 6x slower than FP8 direct.
+
+**In summary:** FP6 offers a theoretical bandwidth advantage that is
+completely overwhelmed by the FP8 direct kernel's architectural
+efficiency. FP6 would only be competitive if the direct kernel were
+unavailable (e.g., FullMatrix output format, or hardware without
+efficient PTX MMA instructions).
+
+---
+
+## 8. Chronoscope: Batch Performance Conclusions
+
+### 8.1 Does Batching Significantly Aid CUTLASS Performance?
+
+**YES.** Batching provides substantial performance gains for CUTLASS:
+
+- At K=64: batch=4 -> batch=128: per-batch time improves **2.0x**
+  (0.515 ms -> 0.258 ms per batch)
+- At K=512: batch=4 -> batch=32: per-batch time improves **3.1x**
+  (1.858 ms -> 0.607 ms per batch)
+- At K=256: batch=4 -> batch=128: per-batch time improves **1.14x**
+  (0.280 ms -> 0.245 ms per batch)
+
+The improvement is most dramatic at small K where the GPU is under-
+saturated at low batch counts. At K=256, the kernel is already well-
+saturated at batch=4 (5,460 \* 4 = 21,840 blocks for 192 concurrent),
+so the improvement is modest.
+
+**Recommendation:** process at least 32 batches together for optimal
+throughput. The sweet spot is batch=64-128 at K=64-256.
+
+### 8.2 Comparison of Batch-Level Parallelism
+
+Both libraries use single-kernel batch parallelism (gridDim.y), but
+they exhibit different scaling behaviors:
+
+- **TCC:** Constant per-batch time. Perfectly linear total time.
+  No batch-dependent optimization or degradation.
+- **CUTLASS:** Improving per-batch time up to batch=128-256.
+  Sub-linear total time (favorable).
+  Degradation at very high batch counts (>256) due to
+  precast buffer exceeding L2 cache.
+
+This means CUTLASS benefits more from batching than TCC does. The
+recommendation for CUTLASS users is to batch aggressively (128+)
+for small-to-medium K, while TCC users see no benefit from batching
+beyond the linear throughput scaling.
+
+### 8.3 Production Recommendations (DSA-2000 Pipeline)
+
+For the DSA-2000 correlator pipeline (batch=128):
+
+**N=3328 (full array, 3328 antennas):**
+- K <= 64: Use CUTLASS direct (persistent mode, 3.5x faster than TCC)
+- K <= 832: Use CUTLASS direct (precast mode, 1.3-3.7x faster than TCC)
+- K > 832: Use CUTLASS baseline (3-GEMM + batch tiling)
+- Crossover at K ~ N/4 = 832 for single, N/2 = 1664 for batched
+
+**N=1664 (half array, 1664 antennas):**
+- K <= 64: Use CUTLASS direct (persistent mode, 7.4-8.6x faster than TCC)
+- K <= 832: Use CUTLASS direct (precast mode, 2.4-8.6x faster than TCC)
+- K > 832: Use CUTLASS baseline (3-GEMM + batch tiling)
+- Crossover at K ~ N/4 = 416 for single, N/2 = 832 for batched
+
+**Batching recommendations:**
+- N=3328: batch aggressively (128+) for 2-3x per-batch improvement
+- N=1664: batching beyond 8 provides minimal improvement (both flat)
+- TCC: linear scaling at both N values (no batch-dependent benefit)
+
+**CUTLASS over TCC at all tested K values (batch=128):**
+
+| K | N=3328 speedup (ms/batch) | N=1664 speedup (ms/batch) |
+|--:|---------------------------|---------------------------|
+| 64 | 3.5x (0.26 vs 0.90) | 7.4x (0.031 vs 0.225) |
+| 256 | 3.7x (0.25 vs 0.91) | 4.8x (0.048 vs 0.226) |
+| 512 | 1.3x (0.73 vs 0.97) | 3.3x (0.071 vs 0.234) |
+| 1024 | -- | 2.6x (0.113 vs 0.293) |
+| 4096 | -- | 2.7x (0.368 vs 1.003) |
+
+**Bandwidth utilization (K=256, batch=128):**
+
+| | CUTLASS GB/s (% of peak) | TCC GB/s (% of peak) |
+|--------|--------------------------|----------------------|
+| N=3328 | 102.5 GB/s (18.8%) | 50.5 GB/s (9.2%) |
+| N=1664 | 152.2 GB/s (27.9%) | 52.8 GB/s (9.7%) |
+
+**Additional CUTLASS advantages:**
+- 2x less output traffic (FP16 packed vs FP32 packed)
+- 1.8x more batches fit in VRAM (1918 vs 1092 at N=3328)
+- 2-4x higher bandwidth utilization than TCC
+- CUDA graph support for repeated HERK calls
+- Autotuning infrastructure for kernel parameters
+
+---
+
+## 9. Architectural Deep Dive: Key Implementation Details
+
+### 9.1 CUTLASS Direct HERK Kernel (`herk_kernel.hpp`)
+
+**Constants:**
+
+| Constant | Value | Description |
+|----------|------:|-------------|
+| BLOCK\_N | 32 | Receivers per block dimension |
+| K\_CHUNK | 64 | Complex K-samples per SMEM load iteration |
+| K\_SUBS | 4 | MMA sub-iterations per K\_CHUNK |
+| THREADS | 128 | 4 warps per block |
+| NR\_BUFS | 2 | Double-buffered SMEM (precast variant) |
+
+**Shared Memory Layout (rectangle block):**
+
+```
+buf[0]: smem_row[32][128] = 4096 bytes (row tile FP8)
+        smem_col[32][128] = 4096 bytes (col tile FP8)
+buf[1]: smem_row[32][128] = 4096 bytes
+        smem_col[32][128] = 4096 bytes
+Total: 16,384 bytes = 16 KB
+
+(Diagonal blocks use only smem_row: 8 KB)
+```
+
+**Triangle Block Indexing:**
+
+Given linear block index `b = blockIdx.x`:
+
+```
+row = floor((sqrt(8*b + 1) - 1) / 2)
+col = b - row*(row+1)/2
+```
+
+Batch: `batch_idx = blockIdx.y`
+
+**MMA Instruction Sequence (inner loop, per K\_CHUNK):**
+
+```
+for sub = 0 to K_SUBS-1:
+  load A fragment from smem_row[sub*32 .. sub*32+31]
+  load B fragment from smem_col[sub*32 .. sub*32+31]
+  apply conjugate permutation to A (alternating rows)
+  mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32
+```
+
+**Output Store (FP32 accumulator -> FP16 packed triangle):**
+
+- Compute packed triangle offset from (row, col) block indices
+- Scale by alpha, add beta \* old value if beta != 0
+- `__half2float` + `__float2half` for FP32->FP16 conversion
+- Coalesced writes to packed triangle output buffer
+
+### 9.2 TCC Correlator Kernel (`TCCorrelator.cu`)
+
+**Constants:**
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| NR\_RECEIVERS\_PER\_BLOCK | 32 \| 48 \| 64 | Template parameter |
+| NR\_WARPS | 4 | |
+| NR\_TIMES\_PER\_BLOCK | 16 (FP8), 8 (FP16), 32 (FP4) | |
+| NR\_SHARED\_BUFFERS | min(4, K / NR\_TIMES\_PER\_BLOCK) | |
+| READ\_AHEAD | min(2, K / NR\_TIMES\_PER\_BLOCK) | |
+
+**Input Data Layout (pre-blocked):**
+
+```
+Samples[nrChannels]
+       [K / NR_TIMES_PER_BLOCK]
+       [nrReceivers]
+       [NR_POLARIZATIONS]
+       [NR_TIMES_PER_BLOCK]
+```
+
+The input must be pre-arranged into time blocks before kernel launch.
+Each time block contains NR\_TIMES\_PER\_BLOCK samples packed into 128-bit
+words (for aligned cp.async loads).
+
+**Pipeline Stages:**
+
+1. FetchData objects compute per-thread load offsets
+2. `memcpy_async` loads 128-bit chunks from GMEM to SMEM
+3. `pipe.commit()` + `pipe.wait_prior<READ_AHEAD>()`
+4. `__syncthreads()`
+5. `load_complex_matrix_sync` loads WMMA fragments from SMEM
+   (includes format-specific register shuffling)
+6. `mma_sync` accumulates into FP32 fragment registers
+7. After all K iterations: `store_complex_matrix_sync` writes output
+
+**Block-Level Decomposition:**
+- **Rectangle blocks:** process (blockX, blockY) pairs where blockX != blockY.
+  Two sets of receivers loaded into separate SMEM regions.
+- **Triangle blocks:** process (blockX, blockX) diagonal pairs.
+  Single set of receivers, self-correlation.
+- **Warp specialization:** warp 0 handles diagonal, warps 1-3 handle rectangle.
+
+### 9.3 Key Differences in Inner Loop
+
+**CUTLASS inner loop (K\_CHUNK=64, 4 MMAs):**
+
+```c
+// SMEM already loaded via cp.async pipeline
+for (int k = 0; k < K_SUBS; k++) {
+    uint4 a_row = *(uint4*)(smem_row + k*32);  // 16 bytes
+    uint4 a_col = *(uint4*)(smem_col + k*32);
+    // Conjugate permutation on A
+    a_row_conj = __byte_perm(a_row ^ 0x00800080, 0, 0x2301);
+    // MMA
+    asm("mma.sync.aligned.m16n8k32..." : C : A_row, A_conj, B, C);
+}
+```
+
+**TCC inner loop (NR\_TIMES\_PER\_BLOCK=16, format-dependent):**
+
+```c
+for (int t = 0; t < NR_TIMES_PER_BLOCK; t += 32) {
+    // Load WMMA fragments from SMEM
+    load_complex_matrix_sync(aFrag[y], &smem[...][t], ldm);
+    load_complex_matrix_sync(bFrag[x], &smem[...][t], ldm);
+    // MMA
+    mma_sync(sum, aFrag, bFrag, sum);
+}
+```
+
+The CUTLASS inner loop is tighter because:
+1. No fragment loading API overhead (direct SMEM->register via uint4)
+2. Conjugate permutation is a single `__byte_perm` (not function call)
+3. Fixed K\_CHUNK=64 and K\_SUBS=4 enables full loop unrolling
+4. No format-dependent branching (always FP8)
+
+---
+
+## 10. Quantitative Summary
+
+### 10.1 N=3328 (Full DSA-2000 Array)
+
+**Batch Scaling (N=3328, batch=128, FP8 compute):**
+
+| K | CL ms | CL GB/s | TCC ms | TCC GB/s | Speedup | CL TF |
+|--:|------:|--------:|-------:|---------:|--------:|------:|
+| 64 | 33.0 | 115.1 | 115.8 | 49.5 | 3.5x | 21.3 |
+| 256 | 31.4 | 102.5 | 116.7 | 50.5 | 3.7x | 68.2 |
+| 512 | 94.0 | 95.5 | 123.6 | 49.4 | 1.3x | 112.2 |
+
+**Per-Batch Efficiency (N=3328, ms/batch at batch=128):**
+
+| K | CUTLASS | TCC | Speedup |
+|--:|--------:|----:|--------:|
+| 64 | 0.258 | 0.904 | 3.5x |
+| 256 | 0.245 | 0.912 | 3.7x |
+| 512 | 0.734 | 0.966 | 1.3x |
+
+**Batch Scaling Factor (N=3328, improvement from batch=4 to batch=128):**
+
+| K | CUTLASS (ms/batch ratio) | TCC (ratio) |
+|--:|--------------------------|-------------|
+| 64 | 0.515 -> 0.258 = 2.0x better | 0.902 -> 0.904 |
+| 256 | 0.280 -> 0.245 = 1.14x | 0.910 -> 0.912 |
+| 512 | 1.858 -> 0.607 = 3.1x better | 0.953 -> 0.966 |
+
+### 10.2 N=1664 (Half DSA-2000 Array)
+
+**K-Scaling (N=1664, batch=128, FP8 compute):**
+
+| K | CL ms | CL TF | CL GB/s | TCC ms | TCC TF | TCC GB/s | Speedup |
+|--:|------:|------:|--------:|-------:|-------:|---------:|--------:|
+| 16 | 3.31 | 10.3 | 218.4 | 28.75 | 1.6 | 49.6 | 8.6x |
+| 32 | 3.46 | 19.7 | 213.1 | 28.96 | 3.1 | 49.5 | 8.3x |
+| 64 | 3.98 | 34.2 | 192.1 | 28.80 | 6.3 | 50.2 | 7.4x |
+| 128 | 4.68 | 58.1 | 174.7 | 28.90 | 12.6 | 51.0 | 6.2x |
+| 256 | 6.09 | 89.3 | 152.2 | 28.92 | 25.1 | 52.8 | 4.8x |
+| 512 | 9.07 | 120.0 | 126.3 | 29.96 | 48.5 | 54.6 | 3.3x |
+| 1024 | 14.48 | 150.4 | 109.3 | 37.45 | 77.5 | 49.5 | 2.6x |
+| 2048 | 25.54 | 170.5 | 96.1 | 61.08 | 95.1 | 37.5 | 2.4x |
+| 4096 | 47.16 | 184.7 | 89.0 | 128.46 | 90.4 | 24.6 | 2.7x |
+
+CUTLASS achieves 2.4x-8.6x speedup at N=1664, with 2x-4.4x higher
+bandwidth utilization than TCC (89-218 GB/s vs 25-55 GB/s).
+
+### 10.3 Cross-N Comparison
+
+CUTLASS batching provides up to 3.1x per-batch improvement at N=3328
+(at K=512, batch=4 to batch=32), while at N=1664 both libraries
+scale linearly (no batch-dependent improvement).
+
+| | N=3328 (batch=128) | N=1664 (batch=128) |
+|----------|--------------------------|--------------------------|
+| CL K=64 | 0.258 ms/batch, 115 GB/s | 0.031 ms/batch, 192 GB/s |
+| TCC K=64 | 0.904 ms/batch, 50 GB/s | 0.225 ms/batch, 50 GB/s |
+| Speedup | 3.5x | 7.4x |
+| CL K=256 | 0.245 ms/batch, 103 GB/s | 0.048 ms/batch, 152 GB/s |
+| TCC K=256 | 0.912 ms/batch, 51 GB/s | 0.226 ms/batch, 53 GB/s |
+| Speedup | 3.7x | 4.8x |
+| CL K=512 | 0.734 ms/batch, 96 GB/s | 0.071 ms/batch, 126 GB/s |
+| TCC K=512 | 0.966 ms/batch, 49 GB/s | 0.234 ms/batch, 55 GB/s |
+| Speedup | 1.3x | 3.3x |
+
+TCC bandwidth is constant ~50 GB/s (9% of peak) regardless of N.
+CUTLASS bandwidth ranges from 89-218 GB/s (16-40% of peak), with
+higher utilization at smaller N and smaller K.
+
+### 10.4 Radio Camera Processor (N=3328, K=199936)
+
+CUTLASS vs TCC at the RCP problem size (best precision per library):
+
+| batch | CL best | CL prec | CL TF | TCC best | TCC prec | CL/TCC |
+|------:|--------:|---------|------:|---------:|----------|-------:|
+| 1 | 67.6ms | FP8 dir | 196.5 | 159.9ms | fp4 | 2.37x |
+| 4 | 205.0ms | FP8 dir | 259.2 | 665.6ms | fp4 | 3.25x |
+
+CUTLASS PIMPL API (INT4->FP8->FP32, includes conversion overhead):
+
+| batch | total\_ms | ms/item | TFLOPS | VRAM |
+|------:|---------:|--------:|-------:|-----:|
+| 1 | 368.5 | 368.5 | 48.1 | 4.7 GB |
+| 4 | 1493.3 | 373.3 | 47.5 | 18.8 GB |
+| 8 | 3152.7 | 394.1 | 45.0 | 37.6 GB |
+
+**Key:** Direct kernel is 2.4-3.3x faster than TCC fp4. PIMPL API path is
+comparable to TCC fp8 (368 vs 330 ms) due to multi-GEMM baseline routing.
+Optimization opportunity: route PIMPL INT4 path through direct kernel.
+
+### 10.5 FP6 vs FP8 Summary
+
+FP6 is slower than FP8 direct for ALL tested configurations:
+
+| Project | K | FP8 (ms) | FP6 (ms) | FP8 win |
+|---------|--:|---------:|---------:|--------:|
+| Chrono N=3328 | 256 | 31.7 | 95.9 | 3.0x |
+| Chrono N=3328 | 1024 | 53.7 | 178.1 | 3.3x |
+| Chrono N=3328 | 4096 | 144.2 | 386.5 | 2.7x |
+| Chrono N=1664 | 256 | 6.1 | 25.6 | 4.2x |
+| Chrono N=1664 | 4096 | 47.1 | 131.9 | 2.8x |
+| RCP K=199936 | batch4 | 204.5 | 1230.0 | 6.0x |
+
+**Conclusion:** FP6 is not recommended for either project.
+
+---
+
+## 11. Appendix: Reproduction Instructions
+
+### CUTLASS (production stg3 build)
+
+```bash
+cd /path/to/cutlass_interface
+mkdir -p build && cd build
+cmake .. -DCUTLASS_DIR=/path/to/cutlass \
+  -DCOMPLEX_FP8_ARCH=120a \
+  -DCOMPLEX_FP8_SM100_STAGES=3 \
+  -DCOMPLEX_SM100_ENABLE_FP6=ON \
+  -DCOMPLEX_SM100_ENABLE_FP4=ON
+make -j example_complex_sm100
+
+# K-scaling sweep at both N values
+for N in 3328 1664; do
+  for K in 16 32 64 128 256 512 1024 2048 4096; do
+    ./example_complex_sm100 $N $N $K 128 direct=auto mode=bench
+  done
+done
+
+# Batch scaling sweep
+for N in 3328 1664; do
+  for batch in 4 8 16 32 64 128 256 512 1024; do
+    ./example_complex_sm100 $N $N 256 $batch direct=auto mode=bench
+  done
+done
+```
+
+### TCC
+
+```bash
+cd /path/to/tensor-core-correlator/example
+mkdir -p build && cd build
+cmake .. && make -j
+
+# K-scaling sweep at both N values
+for N in 3328 1664; do
+  for K in 16 32 64 128 256 512 1024 2048 4096; do
+    ./example $N $K 128 fp8
+  done
+done
+
+# Batch scaling sweep
+for N in 3328 1664; do
+  for batch in 4 8 16 32 64 128 256 512 1024; do
+    ./example $N 256 $batch fp8
+  done
+done
+```
+
+### Radio Camera Processor (INT4->FP8->FP32 via PIMPL API)
+
+```bash
+# Build PIMPL library (same cmake as above, plus test binary)
+make -j cutlass_gemm_api test_herk_int4
+
+# Batch scaling at K=199936
+for batch in 1 2 4 8; do
+  ./test_herk_int4 3328 199936 $batch bench
+done
+
+# Or use bench_herk_precision for multi-precision:
+for batch in 1 2 4 8; do
+  ./bench_herk_precision 3328 199936 $batch input=int4 compute=fp8 output=fp32
+done
+
+# CUTLASS direct kernel at K=199936 (via example binary):
+./example_complex_sm100 3328 3328 199936 1 mode=bench direct=auto
+./example_complex_sm100 3328 3328 199936 4 mode=bench direct=auto
+
+# TCC at K=199936 (all precisions):
+for fmt in fp8 fp4 fp16; do
+  for batch in 1 4; do
+    ./tcc_bench 3328 199936 $batch $fmt
+  done
+done
+```
+
+### FP6 Comparison
+
+```bash
+# FP6 data via example binary (all precisions in mode=bench)
+for K in 128 256 512 1024 2048 4096; do
+  ./example_complex_sm100 3328 3328 $K 128 mode=bench direct=auto
+done
+# Extract "--- Batched HERK (batch=N, FP6 E3M2, ..." sections
+```
+
+### Methodology
+
+- All timings are best-of-5 runs per configuration (best-of-3 for RCP)
+- GPU warmup: initial dummy run before measurement
+- No concurrent GPU load during measurement
+- CUTLASS: extract "Batched Baseline:" line (reliable for stg3 build)
+- TCC: extract "Time:" and "TFLOPS:" lines from stderr
+- RCP: CUDA event timing via `bench_herk_precision` binary
+- FP6: example binary's `mode=bench` runs all precisions automatically

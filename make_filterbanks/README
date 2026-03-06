@@ -1,0 +1,9 @@
+# Make a filterbank (.fil) file with a Sigproc header
+
+## Build
+
+Execute `make` in this directory, an executable `make_test_fil` will be produced
+
+## Usage
+
+Execute `make_test_fil -h` for help and instructions
