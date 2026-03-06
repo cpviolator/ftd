@@ -1,0 +1,22 @@
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1  n_time=16384  n_tps=1
+  GEMM: M=16384 N=4096 K=1664 batch=1
+  Memory: 996.1 MB needed, 123482.3 MB free (1%)
+  Memory: 996.1 MB allocated
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  qc_transpose                   2.58        2.60       0.02     3.3%
+  gemm_pol0                     18.15       18.34       0.15    23.3%
+  gemm_pol1                     36.80       37.36       0.19    47.5%
+  time_integrate                11.04       11.69       0.56    14.9%
+  corner_turn                    8.27        8.67       0.30    11.0%
+  ------------------------   --------   ---------   --------
+  Total                         76.83       78.65       0.53
+  TFLOPS: 32.1  |  Throughput: 12.7 payloads/sec  |  Beams/ch/sec: 5.21e+04
+
+Done.

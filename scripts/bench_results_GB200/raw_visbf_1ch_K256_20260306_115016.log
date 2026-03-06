@@ -1,0 +1,33 @@
+[StrategyTune] Sweeping strategies for N=1664 K=256 batch=4 precision=0...
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Visibility Beamformer Benchmark (pol_mode=A)
+  n_ant=1664  n_ch=1  n_time=512  n_time_inner=2
+  HERK: N=1664 K=256 batch=4  n_baselines=1385280  output=FP16
+  Memory: 131.0 MB needed, 60126.7 MB free (0%)
+  Memory: 131.0 MB allocated
+  Imaging: Nf_eff=2  Ng=4096  n_beam=6000000  fft=FP16
+================================================================
+[TuneCache] Loaded 4 cached entries for build 'sm90_allcfg_vec' from cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] pack_scratch_to_triangle:1664x4x0             cached  block=(256,1,1) grid=(1664,4,1)
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_stacked' (total=1703936, ept=8, bytes=13631488)
+[TuneCache] cast_fp16_to_fp8_stacked:1703936              tuned   block=(128,1,1) grid=(1664,1,1) 4.95 us 2751.8 GB/s
+[TuneCache] Saved 5 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] pack_antisymmetrize_triangle:1664x4x0         cached  block=(256,1,1) grid=(1664,4,1)
+[TuneCache] cast_fp16_to_fp8_stacked:1703936              cached  block=(128,1,1) grid=(1664,1,1)
+[StrategyTune] Winner: Direct+TriangleAware+graph=1+persistent=0+herk_graph=0+tile=1+cfg=10(FP8_T128x256_C1x1_Coop)+dcfg=0(K32_B3)+htile=N32+pipe=Sync (0.138 ms, 123.2 TFLOPS, 209.9 GB/s)
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  herk                           0.16        0.16       0.00    10.1%
+  pol_reduce                     0.04        0.04       0.00     2.3%
+  img_scatter                    0.11        0.11       0.00     7.1%
+  img_fft                        0.72        0.72       0.00    46.0%
+  img_beam                       0.30        0.30       0.00    18.8%
+  corner_turn                    0.25        0.25       0.00    15.7%
+  ------------------------   --------   ---------   --------
+  Total                          1.57        1.58       0.00
+  TFLOPS: 14.4  |  Throughput: 634.4 payloads/sec  |  Beams/ch/sec: 3.81e+09
+
+Done.

@@ -1,0 +1,37 @@
+[StrategyTune] Sweeping strategies for N=1664 K=128 batch=128 precision=0...
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Visibility Beamformer Benchmark (pol_mode=A)
+  n_ant=1664  n_ch=32  n_time=256  n_time_inner=2
+  HERK: N=1664 K=128 batch=128  n_baselines=1385280  output=FP16
+  Memory: 4163.2 MB needed, 60126.0 MB free (7%)
+  Memory: 4163.2 MB allocated
+  Imaging: Nf_eff=64  Ng=4096  n_beam=6000000  fft=FP16
+================================================================
+[TuneCache] Loaded 16 cached entries for build 'sm90_allcfg_vec' from cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] pack_scratch_to_triangle:1664x5x0             cached  block=(256,1,1) grid=(1664,5,1)
+[TuneCache] pack_scratch_to_triangle:1664x3x0             cached  block=(256,1,1) grid=(1664,3,1)
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_stacked' (total=27262976, ept=8, bytes=218103808)
+[TuneCache] cast_fp16_to_fp8_stacked:27262976             tuned   block=(256,1,1) grid=(13312,1,1) 76.22 us 2861.5 GB/s
+[TuneCache] Saved 17 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning ROW 'pack_antisymmetrize_triangle' (N=1664, batch=128, bytes=2836201472)
+[TuneCache] pack_antisymmetrize_triangle:1664x128x0       tuned   block=(64,1,1) grid=(1664,128,1) 1248.28 us 2272.1 GB/s
+[TuneCache] Saved 18 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_fp16_to_fp8_stacked:27262976             cached  block=(256,1,1) grid=(13312,1,1)
+[TuneCache] pack_antisymmetrize_triangle:1664x128x0       cached  block=(64,1,1) grid=(1664,128,1)
+[StrategyTune] Winner: Direct+TriangleAware+graph=0+persistent=0+herk_graph=0+tile=1+cfg=10(FP8_T128x256_C1x1_Coop)+dcfg=0(K32_B3)+htile=N32+pipe=Sync (2.728 ms, 99.8 TFLOPS, 300.0 GB/s)
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  herk                           2.93        2.94       0.00     6.8%
+  pol_reduce                     0.97        0.97       0.00     2.3%
+  img_scatter                    3.79        3.80       0.00     8.8%
+  img_fft                       23.53       23.55       0.01    54.5%
+  img_beam                      10.78       10.79       0.01    25.0%
+  corner_turn                    1.17        1.18       0.00     2.7%
+  ------------------------   --------   ---------   --------
+  Total                         43.18       43.24       0.02
+  TFLOPS: 8.4  |  Throughput: 23.1 payloads/sec  |  Beams/ch/sec: 1.39e+08
+
+Done.

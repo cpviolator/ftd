@@ -1,0 +1,72 @@
+[GemmTune] Sweeping GemmConfig for M=4000 N=4096 K=1664 batch=4 precision=0...
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=4  n_time=4000  n_tps=1
+  GEMM: M=4000 N=4096 K=1664 batch=4
+  Memory: 1220.1 MB needed, 60126.3 MB free (2%)
+  Memory: 1220.1 MB allocated
+================================================================
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_paired' (total=27262976, ept=8, bytes=163577856)
+[TuneCache] cast_fp16_to_fp8_paired:27262976              tuned   block=(256,1,1) grid=(13312,1,1) 47.54 us 3441.1 GB/s
+[TuneCache] Saved 19 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning 1D 'cast_planar_to_interleaved_neg' (total=27262976, ept=4, bytes=163577856)
+[TuneCache] cast_planar_to_interleaved_neg:27262976       tuned   block=(128,1,1) grid=(53248,1,1) 47.95 us 3411.7 GB/s
+[TuneCache] Saved 20 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_paired' (total=26624000, ept=8, bytes=159744000)
+[TuneCache] cast_fp16_to_fp8_paired:26624000              tuned   block=(256,1,1) grid=(13000,1,1) 46.30 us 3449.9 GB/s
+[TuneCache] Saved 21 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_fp16_to_fp8_paired:27262976              cached  block=(256,1,1) grid=(13312,1,1)
+[TuneCache] Tuning 1D 'negate_and_stack_fp8' (total=26624000, ept=16, bytes=106496000)
+[TuneCache] negate_and_stack_fp8:26624000                 tuned   block=(256,1,1) grid=(6500,1,1) 32.98 us 3228.9 GB/s
+[TuneCache] Saved 22 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning 1D 'stack_fp8' (total=26624000, ept=16, bytes=106496000)
+[TuneCache] stack_fp8:26624000                            tuned   block=(512,1,1) grid=(3250,1,1) 32.89 us 3238.0 GB/s
+[TuneCache] Saved 23 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_fp16_to_fp8_paired:26624000              cached  block=(256,1,1) grid=(13000,1,1)
+[TuneCache] negate_and_stack_fp8:26624000                 cached  block=(256,1,1) grid=(6500,1,1)
+[TuneCache] stack_fp8:26624000                            cached  block=(512,1,1) grid=(3250,1,1)
+[TuneCache] Tuning 1D 'cast_planar_to_interleaved' (total=26624000, ept=4, bytes=159744000)
+[TuneCache] cast_planar_to_interleaved:26624000           tuned   block=(128,1,1) grid=(52000,1,1) 47.02 us 3397.3 GB/s
+[TuneCache] Saved 24 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_planar_to_interleaved:26624000           cached  block=(128,1,1) grid=(52000,1,1)
+[GemmTune] Winner: FP8_T128x256_C1x2_Coop (1.180 ms, 739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=14(FP8_T128x256_C1x2_Coop) (739.1 TFLOPS, 626.8 GB/s)
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  qc_transpose                   0.37        0.38       0.00     6.9%
+  gemm_pol0                      1.55        1.56       0.00    28.5%
+  gemm_pol1                      1.62        1.63       0.00    29.7%
+  time_integrate                 0.54        0.54       0.00     9.9%
+  corner_turn                    1.37        1.37       0.00    25.0%
+  ------------------------   --------   ---------   --------
+  Total                          5.45        5.48       0.01
+  TFLOPS: 547.2  |  Throughput: 182.4 payloads/sec  |  Beams/ch/sec: 7.47e+05
+
+Done.

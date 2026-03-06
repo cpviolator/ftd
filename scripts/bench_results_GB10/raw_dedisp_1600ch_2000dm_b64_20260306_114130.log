@@ -1,0 +1,508 @@
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Dedispersion Benchmark
+  n_beam=64  n_ch=1600  n_time=256  n_dm=2000
+  f_min=1312.0 MHz  f_max=1508.0 MHz  max_dm=2600
+================================================================
+  Memory: 367.0 MB needed, 123389.8 MB free (0%)
+[DedispAPI] Nt=256 -> Nt_padded=1024 (Nt_complex=513)
+[Memory] Allocating Transient Pools: 0.525312 GB and 0.525312 GB.
+[DedispAPI] Pipeline initialized (mode=cublas)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.86835 ms
+    Compute: 677.663 GFLOPS
+    Memory:  217.064 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.69904 ms
+    Memory:  178.866 GB/s
+  [cuBLAS Path]
+    Setup:   0.054624 ms
+    GEMM:    110.556 ms
+    Compute: 7602.51 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    5.0112 ms
+    Memory:  209.655 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.99702 ms
+    Compute: 655.75 GFLOPS
+    Memory:  210.045 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.82653 ms
+    Compute: 685.07 GFLOPS
+    Memory:  219.437 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.3841 ms
+    Memory:  191.716 GB/s
+  [cuBLAS Path]
+    Setup:   0.00592 ms
+    GEMM:    74.5423 ms
+    Compute: 11275.5 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.83341 ms
+    Memory:  217.367 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.80915 ms
+    Compute: 681.368 GFLOPS
+    Memory:  218.251 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.77958 ms
+    Compute: 693.579 GFLOPS
+    Memory:  222.162 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.00608 ms
+    Memory:  209.806 GB/s
+  [cuBLAS Path]
+    Setup:   0.003104 ms
+    GEMM:    75.3539 ms
+    Compute: 11154 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.83978 ms
+    Memory:  217.081 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.86538 ms
+    Compute: 673.494 GFLOPS
+    Memory:  215.728 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78982 ms
+    Compute: 691.705 GFLOPS
+    Memory:  221.562 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.02931 ms
+    Memory:  208.596 GB/s
+  [cuBLAS Path]
+    Setup:   0.005344 ms
+    GEMM:    75.3059 ms
+    Compute: 11161.1 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.90634 ms
+    Memory:  214.136 GB/s
+  [Inverse FFT (C2R)]
+    Time:    5.10006 ms
+    Compute: 642.502 GFLOPS
+    Memory:  205.801 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.94982 ms
+    Compute: 663.685 GFLOPS
+    Memory:  212.587 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.25702 ms
+    Memory:  197.438 GB/s
+  [cuBLAS Path]
+    Setup:   0.004448 ms
+    GEMM:    76.2835 ms
+    Compute: 11018.1 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.94906 ms
+    Memory:  212.288 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.80397 ms
+    Compute: 682.103 GFLOPS
+    Memory:  218.486 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.7879 ms
+    Compute: 692.056 GFLOPS
+    Memory:  221.674 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.00534 ms
+    Memory:  209.844 GB/s
+  [cuBLAS Path]
+    Setup:   0.004128 ms
+    GEMM:    74.186 ms
+    Compute: 11329.6 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.83974 ms
+    Memory:  217.083 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.8561 ms
+    Compute: 674.781 GFLOPS
+    Memory:  216.141 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.84042 ms
+    Compute: 682.593 GFLOPS
+    Memory:  218.643 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.40534 ms
+    Memory:  190.791 GB/s
+  [cuBLAS Path]
+    Setup:   0.00272 ms
+    GEMM:    75.3276 ms
+    Compute: 11157.9 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    5.07827 ms
+    Memory:  206.886 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.87642 ms
+    Compute: 671.969 GFLOPS
+    Memory:  215.24 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.77446 ms
+    Compute: 694.52 GFLOPS
+    Memory:  222.463 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.01005 ms
+    Memory:  209.598 GB/s
+  [cuBLAS Path]
+    Setup:   0.00352 ms
+    GEMM:    74.1934 ms
+    Compute: 11328.5 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.83146 ms
+    Memory:  217.455 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.8129 ms
+    Compute: 680.838 GFLOPS
+    Memory:  218.081 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78163 ms
+    Compute: 693.203 GFLOPS
+    Memory:  222.042 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.08966 ms
+    Memory:  205.518 GB/s
+  [cuBLAS Path]
+    Setup:   0.004736 ms
+    GEMM:    75.1171 ms
+    Compute: 11189.2 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    5.26243 ms
+    Memory:  199.646 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.83542 ms
+    Compute: 677.666 GFLOPS
+    Memory:  217.065 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.9289 ms
+    Compute: 667.221 GFLOPS
+    Memory:  213.719 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.66291 ms
+    Memory:  180.252 GB/s
+  [cuBLAS Path]
+    Setup:   0.002752 ms
+    GEMM:    75.3282 ms
+    Compute: 11157.8 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.82531 ms
+    Memory:  217.732 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.80682 ms
+    Compute: 681.699 GFLOPS
+    Memory:  218.357 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78986 ms
+    Compute: 691.699 GFLOPS
+    Memory:  221.56 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    3.99869 ms
+    Memory:  210.194 GB/s
+  [cuBLAS Path]
+    Setup:   0.003264 ms
+    GEMM:    75.3393 ms
+    Compute: 11156.2 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.89939 ms
+    Memory:  214.44 GB/s
+  [Inverse FFT (C2R)]
+    Time:    5.08163 ms
+    Compute: 644.832 GFLOPS
+    Memory:  206.548 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    4.06275 ms
+    Compute: 645.238 GFLOPS
+    Memory:  206.678 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.27427 ms
+    Memory:  196.641 GB/s
+  [cuBLAS Path]
+    Setup:   0.002592 ms
+    GEMM:    73.8651 ms
+    Compute: 11378.8 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    5.1671 ms
+    Memory:  203.329 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.8047 ms
+    Compute: 681.998 GFLOPS
+    Memory:  218.453 GB/s
+------------------------------------
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78166 ms
+    Compute: 693.198 GFLOPS
+    Memory:  222.04 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    4.03859 ms
+    Memory:  208.117 GB/s
+  [cuBLAS Path]
+    Setup:   0.004256 ms
+    GEMM:    75.5867 ms
+    Compute: 11119.7 GFLOPS
+  [Transpose 2 (Batch <-> DM)]
+    Time:    4.83229 ms
+    Memory:  217.418 GB/s
+  [Inverse FFT (C2R)]
+    Time:    4.80586 ms
+    Compute: 681.835 GFLOPS
+    Memory:  218.4 GB/s
+------------------------------------
+[DedispAPI] Nt=256 -> Nt_padded=1024 (Nt_complex=513)
+[DedispAPI] Full B fits in memory (6.6 GB), no tiling needed
+[Memory] Allocating Transient Pools: 0.525312 GB and 0.525312 GB.
+[Memory] Freed FP16 B buffers: 6.6 GB (prepare_b completed)
+[Memory] Persistent Phasors cached. App source can be freed.
+[DedispAPI] Pipeline initialized (mode=cutlass)
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.80493 ms
+    Compute: 688.959 GFLOPS
+    Memory:  220.682 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.75331 ms
+    Memory:  124.457 GB/s
+  [cuBLAS Path]
+    GEMM:    54.2853 ms
+    Compute: 15483 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    5.04202 ms
+    Compute: 649.899 GFLOPS
+    Memory:  208.171 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.82448 ms
+    Compute: 685.437 GFLOPS
+    Memory:  219.554 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.52579 ms
+    Memory:  128.797 GB/s
+  [cuBLAS Path]
+    GEMM:    42.7998 ms
+    Compute: 19637.9 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.81498 ms
+    Compute: 680.543 GFLOPS
+    Memory:  217.987 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78739 ms
+    Compute: 692.149 GFLOPS
+    Memory:  221.704 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.82422 ms
+    Memory:  123.164 GB/s
+  [cuBLAS Path]
+    GEMM:    43.3743 ms
+    Compute: 19377.8 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.99235 ms
+    Compute: 656.364 GFLOPS
+    Memory:  210.242 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78131 ms
+    Compute: 693.262 GFLOPS
+    Memory:  222.06 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.1592 ms
+    Memory:  136.462 GB/s
+  [cuBLAS Path]
+    GEMM:    45.3708 ms
+    Compute: 18525.1 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.83098 ms
+    Compute: 678.289 GFLOPS
+    Memory:  217.265 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.83782 ms
+    Compute: 683.054 GFLOPS
+    Memory:  218.791 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    5.94208 ms
+    Memory:  141.449 GB/s
+  [cuBLAS Path]
+    GEMM:    44.6329 ms
+    Compute: 18831.4 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.80998 ms
+    Compute: 681.25 GFLOPS
+    Memory:  218.213 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78128 ms
+    Compute: 693.268 GFLOPS
+    Memory:  222.062 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    5.6927 ms
+    Memory:  147.645 GB/s
+  [cuBLAS Path]
+    GEMM:    44.3412 ms
+    Compute: 18955.3 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.81997 ms
+    Compute: 679.839 GFLOPS
+    Memory:  217.761 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.80387 ms
+    Compute: 689.15 GFLOPS
+    Memory:  220.743 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.17174 ms
+    Memory:  136.185 GB/s
+  [cuBLAS Path]
+    GEMM:    43.6352 ms
+    Compute: 19261.9 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.85904 ms
+    Compute: 674.372 GFLOPS
+    Memory:  216.01 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.81309 ms
+    Compute: 687.485 GFLOPS
+    Memory:  220.21 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.59882 ms
+    Memory:  127.371 GB/s
+  [cuBLAS Path]
+    GEMM:    43.681 ms
+    Compute: 19241.7 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    5.1143 ms
+    Compute: 640.713 GFLOPS
+    Memory:  205.228 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.94925 ms
+    Compute: 663.782 GFLOPS
+    Memory:  212.618 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.80768 ms
+    Memory:  123.463 GB/s
+  [cuBLAS Path]
+    GEMM:    44.1028 ms
+    Compute: 19057.7 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.99421 ms
+    Compute: 656.12 GFLOPS
+    Memory:  210.163 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.77725 ms
+    Compute: 694.008 GFLOPS
+    Memory:  222.299 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.91219 ms
+    Memory:  121.597 GB/s
+  [cuBLAS Path]
+    GEMM:    44.329 ms
+    Compute: 18960.5 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.85946 ms
+    Compute: 674.314 GFLOPS
+    Memory:  215.991 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78237 ms
+    Compute: 693.068 GFLOPS
+    Memory:  221.998 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.13894 ms
+    Memory:  136.913 GB/s
+  [cuBLAS Path]
+    GEMM:    44.3822 ms
+    Compute: 18937.8 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.80979 ms
+    Compute: 681.277 GFLOPS
+    Memory:  218.221 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78339 ms
+    Compute: 692.881 GFLOPS
+    Memory:  221.938 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.79446 ms
+    Memory:  123.704 GB/s
+  [cuBLAS Path]
+    GEMM:    45.0734 ms
+    Compute: 18647.3 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.80474 ms
+    Compute: 681.994 GFLOPS
+    Memory:  218.451 GB/s
+------------------------------------
+[GemmTune] Cache hit for M=64 N=2000 K=1600 batch=513 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (10.3 TFLOPS, 89.8 GB/s)
+--- FDD GPU Pipeline Performance (R2C) ---
+  [Forward FFT (R2C)]
+    Time:    3.78339 ms
+    Compute: 692.881 GFLOPS
+    Memory:  221.938 GB/s
+  [Transpose 1 (Batch <-> Freq)]
+    Time:    6.81072 ms
+    Memory:  123.408 GB/s
+  [cuBLAS Path]
+    GEMM:    44.3043 ms
+    Compute: 18971.1 GFLOPS
+  [Inverse FFT (C2R)]
+    Time:    4.80678 ms
+    Compute: 681.703 GFLOPS
+    Memory:  218.358 GB/s
+------------------------------------
+
+  Mode                 Min (ms)   Mean (ms)   Std (ms)
+  ------------------   --------   ---------   --------
+  CuBLAS_FP32            107.04      108.44       0.83
+  CUTLASS_FP8             62.32       63.22       0.53
+  Speedup: 1.72x
+  TFLOPS: 1.7
+  Throughput: 1012.3 beams/s
+
+Done.

@@ -1,0 +1,40 @@
+[StrategyTune] Sweeping strategies for N=1664 K=128 batch=8 precision=0...
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Visibility Beamformer Benchmark (pol_mode=A)
+  n_ant=1664  n_ch=2  n_time=256  n_time_inner=2
+  HERK: N=1664 K=128 batch=8  n_baselines=1385280  output=FP16
+  Memory: 260.2 MB needed, 60126.9 MB free (0%)
+  Memory: 260.2 MB allocated
+  Imaging: Nf_eff=4  Ng=4096  n_beam=6000000  fft=FP16
+================================================================
+[TuneCache] Loaded 5 cached entries for build 'sm90_allcfg_vec' from cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning ROW 'pack_scratch_to_triangle' (N=1664, batch=5, bytes=83083520)
+[TuneCache] pack_scratch_to_triangle:1664x5x0             tuned   block=(256,1,1) grid=(1664,5,1) 24.51 us 3389.9 GB/s
+[TuneCache] Saved 6 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] Tuning ROW 'pack_scratch_to_triangle' (N=1664, batch=3, bytes=49850112)
+[TuneCache] pack_scratch_to_triangle:1664x3x0             tuned   block=(256,1,1) grid=(1664,3,1) 11.32 us 4405.6 GB/s
+[TuneCache] Saved 7 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] pack_scratch_to_triangle:1664x5x0             cached  block=(256,1,1) grid=(1664,5,1)
+[TuneCache] pack_scratch_to_triangle:1664x3x0             cached  block=(256,1,1) grid=(1664,3,1)
+[TuneCache] cast_fp16_to_fp8_stacked:1703936              cached  block=(128,1,1) grid=(1664,1,1)
+[TuneCache] Tuning ROW 'pack_antisymmetrize_triangle' (N=1664, batch=8, bytes=177262592)
+[TuneCache] pack_antisymmetrize_triangle:1664x8x0         tuned   block=(64,1,1) grid=(1664,8,1) 85.53 us 2072.5 GB/s
+[TuneCache] Saved 8 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] pack_antisymmetrize_triangle:1664x8x0         cached  block=(64,1,1) grid=(1664,8,1)
+[StrategyTune] Winner: Direct+TriangleAware+graph=1+persistent=0+herk_graph=0+tile=1+cfg=10(FP8_T128x256_C1x1_Coop)+dcfg=0(K32_B3)+htile=N32+pipe=Sync (0.176 ms, 96.6 TFLOPS, 290.4 GB/s)
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  herk                           0.20        0.20       0.00     7.3%
+  pol_reduce                     0.07        0.07       0.00     2.4%
+  img_scatter                    0.21        0.21       0.00     7.8%
+  img_fft                        1.41        1.41       0.00    51.6%
+  img_beam                       0.60        0.60       0.00    21.9%
+  corner_turn                    0.25        0.25       0.00     9.0%
+  ------------------------   --------   ---------   --------
+  Total                          2.72        2.73       0.00
+  TFLOPS: 8.3  |  Throughput: 366.0 payloads/sec  |  Beams/ch/sec: 2.20e+09
+
+Done.

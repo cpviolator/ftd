@@ -1,0 +1,87 @@
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  GEMM: M=8 N=4096 K=1664 batch=1600
+  Memory: 131576.6 MB needed, 60110.0 MB free (219%)
+  WARNING: VoltBF would use >90% of GPU memory — SKIPPING
+
+================================================================
+  Fused Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  ch_fuse=4  n_payloads_batch=1
+  Fused GEMM: M=32 N=4096 K=1664 batch=400
+  Memory: 33262.8 MB needed, 60110.0 MB free (55%)
+  Memory: 33262.8 MB allocated
+================================================================
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_paired' (total=21299200, ept=8, bytes=127795200)
+[TuneCache] cast_fp16_to_fp8_paired:21299200              tuned   block=(64,1,1) grid=(41600,1,1) 37.77 us 3383.8 GB/s
+[TuneCache] Saved 47 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_fp16_to_fp8_paired:21299200              cached  block=(64,1,1) grid=(41600,1,1)
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+[GemmTune] Sweeping GemmConfig for M=32 N=4096 K=1664 batch=400 precision=0...
+[GemmTune] Skipping autotune: need 16.9 GB, only 15.3 GB free
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  fused_transpose_fp8            0.32        0.32       0.00     2.8%
+  gemm_pol0                      5.13        5.39       0.17    46.9%
+  gemm_pol1                      5.20        5.48       0.16    47.7%
+  time_integrate                 0.31        0.31       0.00     2.7%
+  ------------------------   --------   ---------   --------
+  Total                         10.96       11.50       0.28
+  TFLOPS: 128.4  |  Throughput: 86.9 payloads/sec  (1 payloads/call)  |  Beams/ch/sec: 3.56e+05
+
+  vs unfused M=8 batch=1600: M increased 4x, batch reduced 4x
+
+Done.

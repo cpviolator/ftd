@@ -1,0 +1,22 @@
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1  n_time=6144  n_tps=1
+  GEMM: M=6144 N=4096 K=1664 batch=1
+  Memory: 424.7 MB needed, 60120.4 MB free (1%)
+  Memory: 424.7 MB allocated
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  qc_transpose                   0.14        0.15       0.00     1.9%
+  gemm_pol0                      2.72        2.72       0.00    34.7%
+  gemm_pol1                      3.74        3.75       0.00    47.8%
+  time_integrate                 0.20        0.20       0.00     2.5%
+  corner_turn                    1.02        1.02       0.00    13.1%
+  ------------------------   --------   ---------   --------
+  Total                          7.82        7.84       0.01
+  TFLOPS: 103.6  |  Throughput: 127.6 payloads/sec  |  Beams/ch/sec: 5.23e+05
+
+Done.

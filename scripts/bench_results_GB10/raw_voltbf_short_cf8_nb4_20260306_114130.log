@@ -1,0 +1,57 @@
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+[GemmTune] Cache hit for M=256 N=4096 K=1664 batch=200 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (32.3 TFLOPS, 86.3 GB/s)
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  GEMM: M=8 N=4096 K=1664 batch=1600
+  Memory: 131576.6 MB needed, 123317.8 MB free (107%)
+  WARNING: VoltBF would use >90% of GPU memory — SKIPPING
+
+================================================================
+  Fused Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  ch_fuse=8  n_payloads_batch=4
+  Fused GEMM: M=256 N=4096 K=1664 batch=200
+  Memory: 18546.7 MB needed, 123317.8 MB free (15%)
+  Memory: 18546.7 MB allocated
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  fused_transpose_fp8            2.86        2.92       0.06     1.9%
+  gemm_pol0                     66.52       66.93       0.46    43.5%
+  gemm_pol1                     69.72       70.03       0.32    45.5%
+  time_integrate                12.18       14.05       1.59     9.1%
+  ------------------------   --------   ---------   --------
+  Total                        151.28      153.93       1.60
+  TFLOPS: 40.8  |  Throughput: 26.0 payloads/sec  (4 payloads/call)  |  Beams/ch/sec: 1.06e+05
+
+  vs unfused M=8 batch=1600: M increased 32x, batch reduced 8x
+
+Done.

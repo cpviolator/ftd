@@ -1,0 +1,25 @@
+[StrategyTune] Cache hit for N=1664 K=64 batch=4 prec=0: Direct+TriangleAware+graph=0+persistent=0+herk_graph=0+tile=1+cfg=0(FP8_T128x64_C1x1_S3)+dcfg=0(K32_B3) (30.2 TFLOPS, 169.5 GB/s)
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Visibility Beamformer Benchmark (pol_mode=A)
+  n_ant=1664  n_ch=1  n_time=128  n_time_inner=2
+  HERK: N=1664 K=64 batch=4  n_baselines=1385280  output=FP16
+  Memory: 129.7 MB needed, 123438.3 MB free (0%)
+  Memory: 129.7 MB allocated
+  Imaging: Nf_eff=2  Ng=4096  n_beam=6000000  fft=FP16
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  herk                           0.13        0.15       0.04     1.5%
+  pol_reduce                     0.11        0.11       0.00     1.1%
+  img_scatter                    1.06        1.06       0.00    10.5%
+  img_fft                        4.31        4.43       0.18    43.7%
+  img_beam                       3.65        3.67       0.03    36.2%
+  corner_turn                    0.60        0.71       0.17     7.0%
+  ------------------------   --------   ---------   --------
+  Total                          9.86       10.14       0.22
+  TFLOPS: 0.6  |  Throughput: 98.6 payloads/sec  |  Beams/ch/sec: 5.92e+08
+
+Done.

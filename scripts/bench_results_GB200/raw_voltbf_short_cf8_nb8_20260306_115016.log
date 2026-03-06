@@ -1,0 +1,68 @@
+[GemmTune] Sweeping GemmConfig for M=512 N=4096 K=1664 batch=200 precision=0...
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  GEMM: M=8 N=4096 K=1664 batch=1600
+  Memory: 131576.6 MB needed, 60103.7 MB free (219%)
+  WARNING: VoltBF would use >90% of GPU memory — SKIPPING
+
+================================================================
+  Fused Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  ch_fuse=8  n_payloads_batch=8
+  Fused GEMM: M=512 N=4096 K=1664 batch=200
+  Memory: 20735.6 MB needed, 60103.7 MB free (34%)
+  Memory: 20735.6 MB allocated
+================================================================
+[TuneCache] cast_fp16_to_fp8_paired:1363148800            cached  block=(512,1,1) grid=(65535,1,1)
+[TuneCache] cast_planar_to_interleaved_neg:1363148800     cached  block=(1024,1,1) grid=(65535,1,1)
+[TuneCache] Tuning 1D 'cast_fp16_to_fp8_paired' (total=170393600, ept=8, bytes=1022361600)
+[TuneCache] cast_fp16_to_fp8_paired:170393600             tuned   block=(256,1,1) grid=(65535,1,1) 276.61 us 3696.1 GB/s
+[TuneCache] Saved 53 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_fp16_to_fp8_paired:170393600             cached  block=(256,1,1) grid=(65535,1,1)
+[TuneCache] Tuning 1D 'cast_planar_to_interleaved' (total=170393600, ept=4, bytes=1022361600)
+[TuneCache] cast_planar_to_interleaved:170393600          tuned   block=(256,1,1) grid=(65535,1,1) 277.91 us 3678.8 GB/s
+[TuneCache] Saved 54 entries to cutlass_kernel_cache_sm90_allcfg_vec.txt
+[TuneCache] cast_planar_to_interleaved:170393600          cached  block=(256,1,1) grid=(65535,1,1)
+[GemmTune] Winner: FP8_T128x256_C1x1_Coop (12.922 ms, 432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+[GemmTune] Cache hit for M=512 N=4096 K=1664 batch=200 prec=0: cfg=10(FP8_T128x256_C1x1_Coop) (432.1 TFLOPS, 734.4 GB/s)
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  fused_transpose_fp8            2.53        2.53       0.00     8.0%
+  gemm_pol0                     12.59       12.69       0.09    40.0%
+  gemm_pol1                     12.97       13.09       0.07    41.3%
+  time_integrate                 2.72        3.39       0.24    10.7%
+  ------------------------   --------   ---------   --------
+  Total                         30.81       31.71       0.22
+  TFLOPS: 433.1  |  Throughput: 252.3 payloads/sec  (8 payloads/call)  |  Beams/ch/sec: 1.03e+06
+
+  vs unfused M=8 batch=1600: M increased 64x, batch reduced 8x
+
+Done.

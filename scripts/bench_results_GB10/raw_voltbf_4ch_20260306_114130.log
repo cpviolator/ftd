@@ -1,0 +1,48 @@
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=4 prec=0: cfg=2(FP8_T128x128_C1x1_SAuto) (86.6 TFLOPS, 73.4 GB/s)
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=4  n_time=4000  n_tps=1
+  GEMM: M=4000 N=4096 K=1664 batch=4
+  Memory: 1220.1 MB needed, 123500.0 MB free (1%)
+  Memory: 1220.1 MB allocated
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  qc_transpose                   2.41        2.52       0.13     5.7%
+  gemm_pol0                     13.45       13.92       0.30    31.2%
+  gemm_pol1                     14.55       15.09       0.34    33.9%
+  time_integrate                 4.85        5.30       0.37    11.9%
+  corner_turn                    7.43        7.73       0.24    17.3%
+  ------------------------   --------   ---------   --------
+  Total                         42.69       44.56       0.42
+  TFLOPS: 60.1  |  Throughput: 22.4 payloads/sec  |  Beams/ch/sec: 9.19e+04
+
+Done.

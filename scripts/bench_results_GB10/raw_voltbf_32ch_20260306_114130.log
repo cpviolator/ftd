@@ -1,0 +1,48 @@
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+[GemmTune] Cache hit for M=4000 N=4096 K=1664 batch=32 prec=0: cfg=0(FP8_T128x64_C1x1_S3) (84.9 TFLOPS, 72.0 GB/s)
+GPU: NVIDIA GB10  (SM 12.1, 48 SMs, 128524 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=32  n_time=4000  n_tps=1
+  GEMM: M=4000 N=4096 K=1664 batch=32
+  Memory: 9760.7 MB needed, 123365.8 MB free (8%)
+  Memory: 9760.7 MB allocated
+================================================================
+
+  Stage                      Min (ms)   Mean (ms)   Std (ms)  % Total
+  ------------------------   --------   ---------   --------  -------
+  qc_transpose                  64.65       67.53       1.50    10.5%
+  gemm_pol0                    113.58      113.97       0.28    17.8%
+  gemm_pol1                    122.44      123.27       0.51    19.2%
+  time_integrate                64.42       71.51       3.82    11.2%
+  corner_turn                  264.11      264.75       0.51    41.3%
+  ------------------------   --------   ---------   --------
+  Total                        629.21      641.02       5.46
+  TFLOPS: 58.8  |  Throughput: 1.6 payloads/sec  |  Beams/ch/sec: 6.39e+03
+
+Done.

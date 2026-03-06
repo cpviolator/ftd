@@ -1,0 +1,18 @@
+GPU: GH200 480GB  (SM 9.0, 132 SMs, 102005 MB)
+
+================================================================
+  Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  GEMM: M=8 N=4096 K=1664 batch=1600
+  Memory: 131576.6 MB needed, 60111.2 MB free (219%)
+  WARNING: VoltBF would use >90% of GPU memory — SKIPPING
+
+================================================================
+  Fused Voltage Beamformer Benchmark
+  n_ant=1664  n_beam=4096  n_ch=1600  n_time=8  n_tps=1
+  ch_fuse=2  n_payloads_batch=1
+  Fused GEMM: M=16 N=4096 K=1664 batch=800
+  Memory: 65978.4 MB needed, 60111.2 MB free (110%)
+  WARNING: VoltBF-Fused would use >90% of GPU memory — SKIPPING
+
+Done.
