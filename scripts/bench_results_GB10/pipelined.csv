@@ -1,0 +1,3 @@
+benchmark,mode,total_ms,per_payload_ms,throughput_hz,speedup
+dedisp_1600ch_2000dm_b64_pipe,Serial,495.3,61.91,16.15,0.98
+dedisp_1600ch_2000dm_b64_pipe,Pipelined,503.4,62.93,15.89,0.98

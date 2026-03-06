@@ -1,0 +1,179 @@
+stage_type,benchmark,stage,actual_ms,predicted_ms,error_pct
+cutlass_gemm,dedisp_1600ch_1000dm_b64,CUTLASS FP8 GEMM,3.428,2.688,21.6
+cutlass_gemm,dedisp_1600ch_2000dm_b128,CUTLASS FP8 GEMM,5.339,6.819,27.7
+cutlass_gemm,dedisp_1600ch_2000dm_b16,CUTLASS FP8 GEMM,4.834,3.566,26.2
+cutlass_gemm,dedisp_1600ch_2000dm_b256,CUTLASS FP8 GEMM,9.695,10.257,5.8
+cutlass_gemm,dedisp_1600ch_2000dm_b32,CUTLASS FP8 GEMM,4.981,3.998,19.7
+cutlass_gemm,dedisp_1600ch_2000dm_b64,CUTLASS FP8 GEMM,3.861,5.068,31.3
+cutlass_gemm,dedisp_1600ch_512dm_b64,CUTLASS FP8 GEMM,1.090,1.498,37.4
+cutlass_gemm,voltbf_16ch,gemm_pol0,6.000,6.102,1.7
+cutlass_gemm,voltbf_16ch,gemm_pol1,6.260,6.718,7.3
+cutlass_gemm,voltbf_1ch,gemm_pol0,1.820,0.516,71.7
+cutlass_gemm,voltbf_1ch,gemm_pol1,2.510,1.031,58.9
+cutlass_gemm,voltbf_2ch,gemm_pol0,3.560,1.035,70.9
+cutlass_gemm,voltbf_2ch,gemm_pol1,4.830,2.098,56.6
+cutlass_gemm,voltbf_32ch,gemm_pol0,11.980,13.037,8.8
+cutlass_gemm,voltbf_32ch,gemm_pol1,12.470,14.101,13.1
+cutlass_gemm,voltbf_4ch,gemm_pol0,1.560,1.592,2.1
+cutlass_gemm,voltbf_4ch,gemm_pol1,1.630,1.726,5.9
+cutlass_gemm,voltbf_8ch,gemm_pol0,3.060,3.060,0.0
+cutlass_gemm,voltbf_8ch,gemm_pol1,3.190,3.386,6.1
+cutlass_gemm,voltbf_M10240,gemm_pol0,4.440,1.313,70.4
+cutlass_gemm,voltbf_M10240,gemm_pol1,6.040,2.681,55.6
+cutlass_gemm,voltbf_M12288,gemm_pol0,5.330,1.571,70.5
+cutlass_gemm,voltbf_M12288,gemm_pol1,7.140,3.188,55.3
+cutlass_gemm,voltbf_M14336,gemm_pol0,6.220,1.835,70.5
+cutlass_gemm,voltbf_M14336,gemm_pol1,8.280,3.707,55.2
+cutlass_gemm,voltbf_M16384,gemm_pol0,7.100,2.098,70.5
+cutlass_gemm,voltbf_M16384,gemm_pol1,9.380,4.274,54.4
+cutlass_gemm,voltbf_M4096,gemm_pol0,1.830,0.535,70.7
+cutlass_gemm,voltbf_M4096,gemm_pol1,2.530,1.054,58.4
+cutlass_gemm,voltbf_M6144,gemm_pol0,2.720,0.793,70.9
+cutlass_gemm,voltbf_M6144,gemm_pol1,3.750,1.601,57.3
+cutlass_gemm,voltbf_M8192,gemm_pol0,3.600,1.050,70.8
+cutlass_gemm,voltbf_M8192,gemm_pol1,4.910,2.143,56.4
+cutlass_gemm,voltbf_short_cf4,gemm_pol0,5.390,6.249,15.9
+cutlass_gemm,voltbf_short_cf4,gemm_pol1,5.480,6.377,16.4
+cutlass_gemm,voltbf_short_cf8,gemm_pol0,2.810,3.812,35.6
+cutlass_gemm,voltbf_short_cf8,gemm_pol1,2.870,3.937,37.2
+cutlass_gemm,voltbf_short_cf8_nb16,gemm_pol0,25.760,24.390,5.3
+cutlass_gemm,voltbf_short_cf8_nb16,gemm_pol1,26.640,25.489,4.3
+cutlass_gemm,voltbf_short_cf8_nb2,gemm_pol0,3.670,5.095,38.8
+cutlass_gemm,voltbf_short_cf8_nb2,gemm_pol1,3.780,5.265,39.3
+cutlass_gemm,voltbf_short_cf8_nb4,gemm_pol0,6.590,7.656,16.2
+cutlass_gemm,voltbf_short_cf8_nb4,gemm_pol1,6.830,8.011,17.3
+cutlass_gemm,voltbf_short_cf8_nb8,gemm_pol0,12.690,13.148,3.6
+cutlass_gemm,voltbf_short_cf8_nb8,gemm_pol1,13.090,13.999,6.9
+cutlass_gemm,voltbf_short_unfused,gemm_pol0,2.070,2.731,31.9
+cutlass_gemm,voltbf_short_unfused,gemm_pol1,2.070,2.710,30.9
+direct_ptx,visbf_16ch_K128,herk,1.480,1.455,1.7
+direct_ptx,visbf_1ch_K128,herk,0.110,0.110,0.2
+direct_ptx,visbf_1ch_K256,herk,0.160,0.149,7.0
+direct_ptx,visbf_1ch_K64,herk,0.080,0.083,3.3
+direct_ptx,visbf_2ch_K128,herk,0.200,0.187,6.3
+direct_ptx,visbf_32ch_K128,herk,2.940,2.938,0.1
+direct_ptx,visbf_4ch_K128,herk,0.380,0.380,0.1
+direct_ptx,visbf_8ch_K128,herk,0.740,0.750,1.3
+fft,dedisp_1600ch_1000dm_b64,Forward FFT (R2C),0.238,0.241,1.3
+fft,dedisp_1600ch_1000dm_b64,Inverse FFT (C2R),0.150,0.154,3.2
+fft,dedisp_1600ch_2000dm_b128,Forward FFT (R2C),0.468,0.475,1.3
+fft,dedisp_1600ch_2000dm_b128,Inverse FFT (C2R),0.582,0.604,3.8
+fft,dedisp_1600ch_2000dm_b16,Forward FFT (R2C),0.064,0.062,3.0
+fft,dedisp_1600ch_2000dm_b16,Inverse FFT (C2R),0.080,0.077,3.2
+fft,dedisp_1600ch_2000dm_b256,Forward FFT (R2C),0.929,0.953,2.5
+fft,dedisp_1600ch_2000dm_b256,Inverse FFT (C2R),1.157,1.226,6.0
+fft,dedisp_1600ch_2000dm_b32,Forward FFT (R2C),0.123,0.122,1.3
+fft,dedisp_1600ch_2000dm_b32,Inverse FFT (C2R),0.152,0.154,1.7
+fft,dedisp_1600ch_2000dm_b64,Forward FFT (R2C),0.238,0.241,1.3
+fft,dedisp_1600ch_2000dm_b64,Inverse FFT (C2R),0.294,0.306,4.1
+fft,dedisp_1600ch_512dm_b64,Forward FFT (R2C),0.237,0.245,3.2
+fft,dedisp_1600ch_512dm_b64,Inverse FFT (C2R),0.081,0.084,4.2
+fft,visbf_16ch_K128,img_fft,11.800,4.228,64.2
+fft,visbf_1ch_K128,img_fft,0.730,0.288,60.6
+fft,visbf_1ch_K256,img_fft,0.720,0.282,60.8
+fft,visbf_1ch_K64,img_fft,0.710,0.282,60.3
+fft,visbf_2ch_K128,img_fft,1.410,0.544,61.4
+fft,visbf_32ch_K128,img_fft,23.550,8.403,64.3
+fft,visbf_4ch_K128,img_fft,2.800,1.080,61.4
+fft,visbf_8ch_K128,img_fft,5.630,2.140,62.0
+fp32_compute,visbf_16ch_K128,img_beam,5.290,5.245,0.9
+fp32_compute,visbf_1ch_K128,img_beam,0.300,0.298,0.7
+fp32_compute,visbf_1ch_K256,img_beam,0.300,0.301,0.4
+fp32_compute,visbf_1ch_K64,img_beam,0.300,0.299,0.4
+fp32_compute,visbf_2ch_K128,img_beam,0.600,0.614,2.3
+fp32_compute,visbf_32ch_K128,img_beam,10.790,10.653,1.3
+fp32_compute,visbf_4ch_K128,img_beam,1.210,1.293,6.8
+fp32_compute,visbf_8ch_K128,img_beam,2.550,2.630,3.1
+memory,dedisp_1600ch_1000dm_b64,Transpose 1 (Batch <-> Freq),0.340,0.869,155.3
+memory,dedisp_1600ch_2000dm_b128,Transpose 1 (Batch <-> Freq),0.640,1.459,127.9
+memory,dedisp_1600ch_2000dm_b16,Transpose 1 (Batch <-> Freq),0.113,0.279,147.0
+memory,dedisp_1600ch_2000dm_b256,Transpose 1 (Batch <-> Freq),1.234,2.977,141.3
+memory,dedisp_1600ch_2000dm_b32,Transpose 1 (Batch <-> Freq),0.190,0.596,213.9
+memory,dedisp_1600ch_2000dm_b64,Transpose 1 (Batch <-> Freq),0.339,0.975,187.4
+memory,dedisp_1600ch_512dm_b64,Transpose 1 (Batch <-> Freq),0.340,0.923,171.2
+memory,visbf_16ch_K128,pol_reduce,0.490,0.378,22.9
+memory,visbf_16ch_K128,img_scatter,1.810,2.482,37.1
+memory,visbf_16ch_K128,corner_turn,0.570,0.985,72.7
+memory,visbf_1ch_K128,pol_reduce,0.040,0.017,57.1
+memory,visbf_1ch_K128,img_scatter,0.110,0.155,40.5
+memory,visbf_1ch_K128,corner_turn,0.250,0.094,62.2
+memory,visbf_1ch_K256,pol_reduce,0.040,0.017,57.1
+memory,visbf_1ch_K256,img_scatter,0.110,0.153,39.2
+memory,visbf_1ch_K256,corner_turn,0.250,0.087,65.1
+memory,visbf_1ch_K64,pol_reduce,0.040,0.016,60.6
+memory,visbf_1ch_K64,img_scatter,0.110,0.152,37.9
+memory,visbf_1ch_K64,corner_turn,0.250,0.102,59.4
+memory,visbf_2ch_K128,pol_reduce,0.070,0.044,36.6
+memory,visbf_2ch_K128,img_scatter,0.210,0.311,47.9
+memory,visbf_2ch_K128,corner_turn,0.250,0.139,44.5
+memory,visbf_32ch_K128,pol_reduce,0.970,0.766,21.1
+memory,visbf_32ch_K128,img_scatter,3.800,5.031,32.4
+memory,visbf_32ch_K128,corner_turn,1.180,2.029,72.0
+memory,visbf_4ch_K128,pol_reduce,0.130,0.100,22.9
+memory,visbf_4ch_K128,img_scatter,0.420,0.615,46.5
+memory,visbf_4ch_K128,corner_turn,0.250,0.238,5.0
+memory,visbf_8ch_K128,pol_reduce,0.250,0.186,25.6
+memory,visbf_8ch_K128,img_scatter,0.810,1.251,54.4
+memory,visbf_8ch_K128,corner_turn,0.280,0.481,71.7
+memory,voltbf_16ch,qc_transpose,1.750,3.110,77.7
+memory,voltbf_16ch,time_integrate,2.690,4.475,66.4
+memory,voltbf_16ch,corner_turn,6.050,6.075,0.4
+memory,voltbf_1ch,qc_transpose,0.090,0.066,26.9
+memory,voltbf_1ch,time_integrate,0.130,0.179,37.6
+memory,voltbf_1ch,corner_turn,0.670,0.298,55.6
+memory,voltbf_2ch,qc_transpose,0.180,0.120,33.2
+memory,voltbf_2ch,time_integrate,0.260,0.355,36.5
+memory,voltbf_2ch,corner_turn,0.730,0.531,27.3
+memory,voltbf_32ch,qc_transpose,4.780,9.665,102.2
+memory,voltbf_32ch,time_integrate,7.600,10.234,34.7
+memory,voltbf_32ch,corner_turn,14.680,37.890,158.1
+memory,voltbf_4ch,qc_transpose,0.380,0.361,5.1
+memory,voltbf_4ch,time_integrate,0.540,0.759,40.5
+memory,voltbf_4ch,corner_turn,1.370,1.106,19.2
+memory,voltbf_8ch,qc_transpose,0.790,0.790,0.0
+memory,voltbf_8ch,time_integrate,1.180,1.879,59.2
+memory,voltbf_8ch,corner_turn,2.820,2.390,15.2
+memory,voltbf_M10240,qc_transpose,0.240,0.185,23.1
+memory,voltbf_M10240,time_integrate,0.340,0.777,128.6
+memory,voltbf_M10240,corner_turn,1.700,0.759,55.4
+memory,voltbf_M12288,qc_transpose,0.290,0.263,9.2
+memory,voltbf_M12288,time_integrate,0.440,1.018,131.3
+memory,voltbf_M12288,corner_turn,2.040,0.890,56.4
+memory,voltbf_M14336,qc_transpose,0.340,0.321,5.7
+memory,voltbf_M14336,time_integrate,0.490,1.411,188.0
+memory,voltbf_M14336,corner_turn,2.380,1.058,55.6
+memory,voltbf_M16384,qc_transpose,0.380,0.372,2.1
+memory,voltbf_M16384,time_integrate,0.630,1.673,165.6
+memory,voltbf_M16384,corner_turn,2.720,1.241,54.4
+memory,voltbf_M4096,qc_transpose,0.090,0.064,28.4
+memory,voltbf_M4096,time_integrate,0.130,0.186,43.1
+memory,voltbf_M4096,corner_turn,0.680,0.299,56.0
+memory,voltbf_M6144,qc_transpose,0.150,0.097,35.1
+memory,voltbf_M6144,time_integrate,0.200,0.312,56.0
+memory,voltbf_M6144,corner_turn,1.020,0.442,56.6
+memory,voltbf_M8192,qc_transpose,0.190,0.126,33.7
+memory,voltbf_M8192,time_integrate,0.280,0.542,93.7
+memory,voltbf_M8192,corner_turn,1.360,0.597,56.1
+memory,voltbf_short_cf4,fused_transpose_fp8,0.320,0.103,67.8
+memory,voltbf_short_cf4,time_integrate,0.310,0.429,38.5
+memory,voltbf_short_cf8,fused_transpose_fp8,0.320,0.103,67.8
+memory,voltbf_short_cf8,time_integrate,0.310,0.434,39.9
+memory,voltbf_short_cf8_nb16,fused_transpose_fp8,5.060,1.752,65.4
+memory,voltbf_short_cf8_nb16,time_integrate,11.330,15.491,36.7
+memory,voltbf_short_cf8_nb2,fused_transpose_fp8,0.640,0.205,68.0
+memory,voltbf_short_cf8_nb2,time_integrate,0.620,0.902,45.4
+memory,voltbf_short_cf8_nb4,fused_transpose_fp8,1.270,0.418,67.1
+memory,voltbf_short_cf8_nb4,time_integrate,1.290,2.011,55.9
+memory,voltbf_short_cf8_nb8,fused_transpose_fp8,2.530,0.869,65.7
+memory,voltbf_short_cf8_nb8,time_integrate,3.390,4.777,40.9
+memory,voltbf_short_unfused,qc_transpose,0.020,0.011,42.8
+memory,voltbf_short_unfused,time_integrate,0.050,0.043,14.1
+memory,voltbf_short_unfused,corner_turn,0.090,0.338,275.3
+
+SUMMARY,,,,,
+stage_type,MAPE_%,n_samples,,,
+cutlass_gemm,35.3,47,,,
+direct_ptx,2.5,8,,,
+fft,24.3,22,,,
+fp32_compute,2.0,8,,,
+memory,63.0,85,,,
